@@ -27,6 +27,10 @@ RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 # Em desenvolvimento, o valor padrão é lido do .env.
 # Em produção, o Render.com o injeta.
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost').split(',')
+
+# Adiciona o domínio personalizado e o subdomínio www
+ALLOWED_HOSTS.extend(['goldenergy.pro', 'www.goldenergy.pro'])
+
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
     
