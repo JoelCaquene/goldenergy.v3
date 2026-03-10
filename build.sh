@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Saia imediatamente se um comando falhar
+# Encerrar o script se houver erro
 set -o errexit
 
-# Coleta arquivos estáticos
-python manage.py collectstatic --no-input
+# Instalar as dependências
+pip install -r requirements.txt
 
-# Aplica migrações do banco de dados (CRUCIAL PARA CRIAR A TABELA)
+# Coletar arquivos estáticos e migrar o banco
+python manage.py collectstatic --no-input
 python manage.py migrate
