@@ -1,5 +1,5 @@
 """
-Django settings for neoenergia project.
+Django settings for goldenergy project.
 Configurado para Produção no Render.com (PostgreSQL e WhiteNoise).
 """
 
@@ -9,7 +9,7 @@ import dj_database_url
 from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-# Assume que o BASE_DIR é 'neoenergia' (pasta do projeto).
+# Assume que o BASE_DIR é 'goldenergy' (pasta do projeto).
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -64,7 +64,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'neoenergia.urls'
+ROOT_URLCONF = 'goldenergy.urls'
 
 TEMPLATES = [
     {
@@ -83,7 +83,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'neoenergia.wsgi.application'
+WSGI_APPLICATION = 'goldenergy.wsgi.application'
 
 
 # 🚀 Configuração do Banco de Dados para Produção (Render/PostgreSQL)

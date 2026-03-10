@@ -4,357 +4,248 @@
 {% block title %}Minha Equipa{% endblock %}
 
 {% block content %}
-<div class="page-header-custom">
-    <h1>Minha Equipa <i class="fas fa-sitemap"></i></h1>
-</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/all.min.css">
 
-<div class="team-container-custom">
-
-    {# Área de Resumo - Diagrama de Venn Recriado com Círculos Arredondados e Ligados #}
-    <div class="summary-area-venn-recreated">
-        
-        <div class="venn-diagram-container">
-            
-            {# Círculo 1: INVESTIDORES (Verde) #}
-            <div class="venn-circle circle-investors">
-                <i class="fas fa-chart-line"></i>
-                <p class="venn-title">INVESTIDORES</p>
-                <span class="venn-value">{{ total_investors }}</span>
-            </div>
-            
-            {# Círculo 2: TOTAL (Vermelho) #}
-            <div class="venn-circle circle-total">
-                <i class="fas fa-globe-africa"></i>
-                <p class="venn-title">TOTAL</p>
-                <span class="venn-value">{{ team_count }}</span>
-            </div>
-            
-            {# Círculo 3: SUBSÍDIO (Preto/Escuro) #}
-            <div class="venn-circle circle-subsidy">
-                <i class="fas fa-crown"></i>
-                <p class="venn-title">SUBSÍDIO</p>
-                {# Mantendo a formatação do Django para a variável numérica #}
-                <span class="venn-value">KZ {{ subsidy_balance|floatformat:2 }}</span> 
-            </div>
-            
-        </div>
-        
+<div class="main-wrapper">
+    <div class="page-header-custom">
+        <h1>Minha Equipa <i class="fas fa-sitemap"></i></h1>
+        <p>Gestão de rede e crescimento de ativos</p>
     </div>
 
-    {# Link de Convite - Estilo Limpo e Destacado #}
-    <div class="invite-link-section-v2">
-        <h2>Link de Convite <i class="fas fa-share-alt"></i></h2>
-        <div class="invite-box-v2">
-            <span id="invite-link" class="invite-link-text">{{ invite_link }}</span>
-            <button class="copy-button-v2" data-clipboard-target="#invite-link">
-                <i class="fas fa-clone"></i> Copiar
-            </button>
-        </div>
-    </div>
+    <div class="team-container-custom">
 
-    {# Membros por Nível - Abas/Lista de Membros #}
-    <div class="team-members-list-v2">
-        <h2 class="section-title-v2">MEMBROS POR NÍVEL <i class="fas fa-user-tag"></i></h2>
-        
-        <div class="tabs-v2">
-            <div class="tab-buttons-v2">
-                {# Lógica de Abas Django - MANTIDA #}
-                {% for data in levels_data %}
-                    <button class="tab-button-v2 {% if forloop.first %}active{% endif %}" onclick="openTab(event, 'tab-{{ data.name|slugify }}')">
-                        {{ data.name }} ({{ data.count }})
-                    </button>
-                {% endfor %}
+        {# Área de Resumo - Diagrama de Venn #}
+        <div class="summary-area-venn-recreated">
+            <div class="venn-diagram-container">
+                
+                {# Círculo 1: INVESTIDORES #}
+                <div class="venn-circle circle-investors">
+                    <i class="fas fa-chart-line"></i>
+                    <p class="venn-title">INVESTIDORES</p>
+                    <span class="venn-value">{{ total_investors }}</span>
+                </div>
+                
+                {# Círculo 2: TOTAL #}
+                <div class="venn-circle circle-total">
+                    <i class="fas fa-globe-africa"></i>
+                    <p class="venn-title">TOTAL</p>
+                    <span class="venn-value">{{ team_count }}</span>
+                </div>
+                
+                {# Círculo 3: SUBSÍDIO #}
+                <div class="venn-circle circle-subsidy">
+                    <i class="fas fa-crown"></i>
+                    <p class="venn-title">SUBSÍDIO</p>
+                    <span class="venn-value">KZ {{ subsidy_balance|floatformat:2 }}</span> 
+                </div>
+                
             </div>
+        </div>
 
-            <div class="tab-content-container-v2">
-                {# Lógica de Conteúdo de Abas Django - MANTIDA #}
-                {% for data in levels_data %}
-                    <div id="tab-{{ data.name|slugify }}" class="tab-content-v2 {% if forloop.first %}active{% endif %}">
-                        {% if data.members %}
-                            <div class="member-grid-v2">
-                                {% for member in data.members %}
-                                    <div class="member-card-v2 {% if data.name|lower == 'não investido' %}not-invested-v2{% else %}invested-v2{% endif %}">
-                                        <div class="member-details-v2">
-                                            {# Ícone: fa-mobile-alt #}
-                                            <p class="member-phone"><i class="fas fa-mobile-alt"></i> {{ member.phone_number }}</p>
-                                            {# Ícone: fa-clock #}
-                                            <p class="member-date"><i class="far fa-clock"></i> Desde: {{ member.date_joined|date:"d/m/Y" }}</p>
+        {# Link de Convite #}
+        <div class="invite-link-section-v2">
+            <h2>Link de Convite <i class="fas fa-share-alt"></i></h2>
+            <div class="invite-box-v2">
+                <span id="invite-link" class="invite-link-text">{{ invite_link }}</span>
+                <button class="copy-button-v2">
+                    <i class="fas fa-clone"></i> Copiar
+                </button>
+            </div>
+        </div>
+
+        {# Membros por Nível #}
+        <div class="team-members-list-v2">
+            <h2 class="section-title-v2">MEMBROS POR NÍVEL <i class="fas fa-user-tag"></i></h2>
+            
+            <div class="tabs-v2">
+                <div class="tab-buttons-v2">
+                    {% for data in levels_data %}
+                        <button class="tab-button-v2 {% if forloop.first %}active{% endif %}" onclick="openTab(event, 'tab-{{ data.name|slugify }}')">
+                            {{ data.name }} <span class="badge-count">{{ data.count }}</span>
+                        </button>
+                    {% endfor %}
+                </div>
+
+                <div class="tab-content-container-v2">
+                    {% for data in levels_data %}
+                        <div id="tab-{{ data.name|slugify }}" class="tab-content-v2 {% if forloop.first %}active{% endif %}">
+                            {% if data.members %}
+                                <div class="member-grid-v2">
+                                    {% for member in data.members %}
+                                        <div class="member-card-v2 {% if data.name|lower == 'não investido' %}not-invested-v2{% else %}invested-v2{% endif %}">
+                                            <div class="member-details-v2">
+                                                <p class="member-phone"><i class="fas fa-mobile-alt"></i> {{ member.phone_number }}</p>
+                                                <p class="member-date"><i class="far fa-clock"></i> Desde: {{ member.date_joined|date:"d/m/Y" }}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <div class="no-members-message-v2">
-                                <i class="fas fa-frown"></i> Nenhum membro neste nível.
-                            </div>
-                        {% endif %}
-                    </div>
-                {% endfor %}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="no-members-message-v2">
+                                    <i class="fas fa-ghost"></i> <p>Nenhum membro encontrado.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>
 </div>
-
----
 
 <style>
-    /* 🎨 ESTILOS GERAIS E LAYOUT 🎨 */
-    body { 
-        background-color: #f4f6f9; 
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-        /* Previne barra de rolagem horizontal desnecessária */
-        overflow-x: hidden; 
+    :root {
+        --deep-blue: #0a192f;
+        --electric-blue: #007bff;
+        --soft-blue: #172a45;
+        --neon-cyan: #00d4ff;
+        --investor-green: #00f2a1;
+        --white: #ffffff;
     }
-    .page-header-custom { 
-        text-align: center; padding: 15px 15px; background-color: #343a40; border-bottom: 5px solid #00aaff; 
-        margin-bottom: 20px; color: white;
-    }
-    .page-header-custom h1 { color: #ffffff; font-size: 1.8rem; margin: 0; }
-    .team-container-custom {
-        background-color: #ffffff; padding: 25px; border-radius: 10px; margin: 20px auto; 
-        max-width: 900px; width: calc(100% - 40px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); 
-    }
-    .section-title-v2 { font-size: 1.5rem; color: #343a40; margin-bottom: 15px; text-align: center; font-weight: 700; }
 
-    /* 🔴 CORREÇÃO DO DIAGRAMA DE VENN PARA SOBREPOSIÇÃO ESTÁTICA 🟢 */
+    /* Reset e Prevenção de Rolagem */
+    html, body {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    body { 
+        background-color: var(--deep-blue); 
+        background-image: radial-gradient(circle at top right, #112240, #0a192f);
+        font-family: 'Poppins', sans-serif; 
+        color: var(--white);
+        margin: 0;
+        padding: 0;
+    }
+
+    .main-wrapper { 
+        width: 100%;
+        max-width: 100vw;
+        padding-bottom: 50px; 
+    }
+
+    .page-header-custom { 
+        text-align: center; 
+        padding: 30px 15px; 
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .page-header-custom h1 { 
+        font-size: 1.5rem;
+        color: var(--neon-cyan);
+        margin: 0 0 5px 0;
+    }
+
+    .team-container-custom {
+        background: var(--soft-blue); 
+        padding: 20px; 
+        border-radius: 15px; 
+        margin: 20px auto; 
+        width: 92%; /* Ajuste para não colar nas bordas */
+        max-width: 950px; 
+        box-sizing: border-box;
+    }
+
+    /* DIAGRAMA DE VENN RESPONSIVO */
     .summary-area-venn-recreated {
         display: flex; justify-content: center; align-items: center; 
-        height: 250px; /* Altura fixa para o diagrama */
-        margin-bottom: 50px;
-        position: relative;
+        height: 250px; position: relative; margin-bottom: 30px;
     }
     .venn-diagram-container {
-        position: relative;
-        width: 100%; 
-        max-width: 350px; /* Largura ajustada para o tamanho da sobreposição */
-        margin: 0 auto;
-        display: block; /* Não usa flexbox aqui, apenas o contêiner absoluto */
-        height: 100%;
+        position: relative; width: 100%; max-width: 320px; height: 100%;
     }
     .venn-circle {
-        width: 130px; /* Tamanho reduzido para melhor ajuste em telas pequenas */
-        height: 130px;
-        border-radius: 50%;
-        color: white;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        font-weight: bold;
-        position: absolute; /* Posição absoluta para sobreposição */
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-        z-index: 10;
-        transition: transform 0.3s;
-    }
-    .venn-circle:hover {
-        transform: scale(1.05);
-        z-index: 20;
+        width: 120px; height: 120px; border-radius: 50%;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        text-align: center; position: absolute; 
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        border: 2px solid rgba(255,255,255,0.1);
     }
 
-    /* Posições para SOBREPOSIÇÃO (ajustado com margens/posições negativas) */
-    .circle-investors { 
-        background-color: #28a745; /* Verde */
-        top: 0; left: 0; 
-        z-index: 12;
-    }
-    .circle-total { 
-        background-color: #dc3545; /* Vermelho */
-        top: 0; 
-        right: 0; 
-        /* Sobreposição horizontal */
-        margin-left: -50px; 
-        z-index: 11;
-    }
+    .circle-investors { background: linear-gradient(135deg, #00b09b, #96c93d); top: 0; left: 5%; }
+    .circle-total { background: linear-gradient(135deg, #0072ff, #00c6ff); top: 0; right: 5%; }
     .circle-subsidy { 
-        background-color: #343a40; /* Preto */
-        bottom: 0; 
-        left: 50%;
-        /* Centralizado e sobreposto vertical/horizontalmente */
-        transform: translateX(-50%);
-        margin-top: -50px; /* Ajusta a sobreposição vertical para cima */
-        z-index: 13;
+        background: linear-gradient(135deg, #f12711, #f5af19); 
+        bottom: 5%; left: 50%; transform: translateX(-50%);
     }
 
-    .venn-circle i { font-size: 2.0rem; margin-bottom: 3px; }
-    .venn-title { font-size: 0.75rem; margin: 0; }
-    .venn-value { font-size: 1.4rem; margin: 3px 0 0 0; }
-    /* ----------------------------------------------- */
+    .venn-circle i { font-size: 1.5rem; }
+    .venn-title { font-size: 0.6rem; font-weight: 600; margin: 2px 0; }
+    .venn-value { font-size: 1rem; font-weight: 800; }
 
-    /* 🔗 LINK DE CONVITE (V2) */
-    .invite-link-section-v2 h2 { margin-bottom: 15px; color: #007bff; font-size: 1.5rem; text-align: center; }
+    /* LINK DE CONVITE RESPONSIVO */
     .invite-box-v2 {
-        background-color: #ffffff; padding: 15px; border-radius: 10px; 
-        display: flex; justify-content: space-between; align-items: center; 
-        margin-bottom: 30px; border: 2px solid #007bff; 
+        background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 10px; 
+        display: flex; flex-direction: column; gap: 10px;
+        margin-bottom: 30px; border: 1px dashed var(--electric-blue); 
     }
-    .invite-link-text {
-        flex-grow: 1; color: #343a40; font-weight: 500; margin-right: 15px;
-        overflow: hidden; white-space: nowrap; text-overflow: ellipsis; 
-        min-width: 0;
+    .invite-link-text { 
+        color: #cbd5e0; font-family: monospace; font-size: 0.8rem;
+        word-break: break-all; /* Força quebra em telas muito pequenas */
     }
     .copy-button-v2 {
-        background-color: #007bff; color: #fff; border: none; padding: 10px 20px; 
-        border-radius: 8px; cursor: pointer; font-weight: bold; transition: background-color 0.2s;
-        white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        background: var(--electric-blue); color: white; border: none; padding: 10px; 
+        border-radius: 8px; font-weight: 700; width: 100%;
     }
-    .copy-button-v2:hover { background-color: #0056b3; }
 
-    /* 👥 MEMBROS POR NÍVEL (V2) */
-    .team-members-list-v2 { margin-top: 30px; }
-    .tabs-v2 { border: 1px solid #ced4da; border-radius: 8px; overflow: hidden; }
-    .tab-buttons-v2 { display: flex; border-bottom: 1px solid #ced4da; }
+    /* ABAS E GRID */
+    .tab-buttons-v2 { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 10px; }
     .tab-button-v2 {
-        background-color: #f8f9fa; color: #495057; border: none; padding: 12px 15px; 
-        cursor: pointer; font-size: 0.95rem; font-weight: 600; flex-grow: 1; transition: all 0.2s;
-        border-right: 1px solid #ced4da;
+        flex: 1; min-width: 100px; white-space: nowrap;
+        background: rgba(255,255,255,0.05); color: #a0aec0; border: 1px solid rgba(255,255,255,0.1); 
+        padding: 10px; border-radius: 8px; font-size: 0.8rem;
     }
-    .tab-button-v2:last-child { border-right: none; }
-    .tab-button-v2:hover { background-color: #e9ecef; }
-    .tab-button-v2.active { 
-        background-color: #00aaff; color: #fff; font-weight: bold; 
-        border-bottom: 3px solid #00aaff;
-    }
+    .tab-button-v2.active { background: var(--electric-blue); color: white; }
 
-    .tab-content-v2 { padding: 20px 10px; display: none; }
-    .tab-content-v2.active { display: block; }
-    .member-grid-v2 {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 15px;
-    }
+    .member-grid-v2 { display: grid; grid-template-columns: 1fr; gap: 10px; }
     .member-card-v2 {
-        background-color: #ffffff; border-radius: 10px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
-        transition: box-shadow 0.2s; border: 1px solid #e0e0e0;
+        background: rgba(255,255,255,0.03); border-radius: 10px; padding: 15px; 
+        border: 1px solid rgba(255,255,255,0.05);
     }
-    .member-card-v2:hover { box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
 
-    .invested-v2 { border-left: 5px solid #00aaff; }
-    .not-invested-v2 { border-left: 5px solid #dc3545; }
-
-    .member-details-v2 p { margin: 5px 0; color: #343a40; font-size: 0.95rem; display: flex; align-items: center; }
-    .member-details-v2 i { margin-right: 10px; font-size: 1.1rem; }
-    .member-phone i { color: #007bff; }
-    .member-date i { color: #28a745; }
-    .member-phone { font-weight: 600; }
-    
-    .no-members-message-v2 { color: #6c757d; text-align: center; padding: 30px; background-color: #f1f1f1; border-radius: 8px; border: 1px solid #ced4da; margin-top: 15px; }
-
-    /* 📱 RESPONSIVIDADE 📱 */
-    @media (max-width: 576px) {
-        .team-container-custom { padding: 15px; width: 100%; }
-        
-        /* Ajuste do Diagrama de Venn para mobile */
-        .venn-circle {
-            width: 100px; /* Reduz mais no mobile */
-            height: 100px;
-        }
-        .venn-circle i { font-size: 1.6rem; }
-        .venn-value { font-size: 1.1rem; }
-        .venn-title { font-size: 0.65rem; }
-
-        .circle-total { 
-             /* Sobreposição horizontal ajustada para círculos menores */
-            margin-left: -35px; 
-            margin-right: 0;
-        }
-        .circle-subsidy { 
-             /* Sobreposição vertical ajustada para círculos menores */
-            margin-top: -35px; 
-        }
-
-        .summary-area-venn-recreated { 
-            height: 180px; /* Altura ajustada para o tamanho menor dos círculos */
-            margin-bottom: 50px;
-        }
-
-        .invite-box-v2 { flex-direction: column; align-items: flex-start; }
-        .invite-link-text { width: 100%; margin-bottom: 10px; margin-right: 0; white-space: normal; word-break: break-all; }
-        .copy-button-v2 { width: 100%; }
-        .tab-buttons-v2 { flex-wrap: wrap; }
-        .tab-button-v2 { flex-basis: 100%; border-right: none; }
-        .member-grid-v2 { grid-template-columns: 1fr; }
+    /* Media Query para Tablets e Desktops Pequenos */
+    @media (min-width: 600px) {
+        .invite-box-v2 { flex-direction: row; align-items: center; }
+        .copy-button-v2 { width: auto; }
+        .member-grid-v2 { grid-template-columns: repeat(2, 1fr); }
+        .venn-circle { width: 140px; height: 140px; }
+        .venn-diagram-container { max-width: 380px; }
     }
 </style>
 
 <script>
-    // Lógica das Abas (MANTIDA)
     function openTab(evt, tabName) {
         let i, tabcontent, tabbuttons;
-
         tabcontent = document.getElementsByClassName("tab-content-v2");
         for (i = 0; i < tabcontent.length; i++) {
             tabcontent[i].style.display = "none";
-            tabcontent[i].classList.remove("active");
         }
-
         tabbuttons = document.getElementsByClassName("tab-button-v2");
         for (i = 0; i < tabbuttons.length; i++) {
             tabbuttons[i].classList.remove("active");
         }
-
         document.getElementById(tabName).style.display = "block";
-        document.getElementById(tabName).classList.add("active");
         evt.currentTarget.classList.add("active");
     }
 
-    // Abre a primeira aba por padrão ao carregar (MANTIDA)
-    document.addEventListener('DOMContentLoaded', (event) => {
-        const firstTabButton = document.querySelector('.tab-button-v2');
-        if (firstTabButton) {
-            firstTabButton.click(); 
-        }
-    });
-
-
-    // Lógica para Copiar Link (MANTIDA com classes atualizadas)
-    document.addEventListener('DOMContentLoaded', function() {
-        const copyButton = document.querySelector('.copy-button-v2');
-        if (copyButton) {
-            copyButton.addEventListener('click', function(e) {
-                const linkElement = document.getElementById('invite-link');
-                
-                // Usa a API de Clipboard moderna, com fallback
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(linkElement.innerText).then(() => {
-                        handleCopySuccess(e.target);
-                    }).catch(err => {
-                        console.error('Falha ao copiar (Clipboard API): ', err);
-                        fallbackCopy(linkElement.innerText, e.target);
-                    });
-                } else {
-                    fallbackCopy(linkElement.innerText, e.target);
-                }
+    document.addEventListener('DOMContentLoaded', () => {
+        const copyBtn = document.querySelector('.copy-button-v2');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', function() {
+                const text = document.getElementById('invite-link').innerText;
+                navigator.clipboard.writeText(text).then(() => {
+                    const original = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-check"></i> Copiado';
+                    this.style.background = '#28a745';
+                    setTimeout(() => {
+                        this.innerHTML = original;
+                        this.style.background = '#007bff';
+                    }, 2000);
+                });
             });
         }
     });
-
-    function handleCopySuccess(buttonElement) {
-        const originalText = buttonElement.innerHTML;
-        const originalBg = buttonElement.style.backgroundColor;
-        buttonElement.innerHTML = '<i class="fas fa-check"></i> Copiado!';
-        buttonElement.style.backgroundColor = '#28a745';
-        setTimeout(() => {
-            buttonElement.innerHTML = originalText;
-            buttonElement.style.backgroundColor = originalBg;
-        }, 2000);
-    }
-
-    function fallbackCopy(textToCopy, buttonElement) {
-         // Cria um textarea temporário para garantir compatibilidade
-        const tempInput = document.createElement('textarea');
-        tempInput.value = textToCopy;
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        try {
-            document.execCommand('copy');
-            handleCopySuccess(buttonElement);
-        } catch (err) {
-            alert('Erro ao copiar o link. Tente copiar manualmente.');
-            console.error('Falha ao copiar (execCommand): ', err);
-        } finally {
-            document.body.removeChild(tempInput);
-        }
-    }
 </script>
 {% endblock %}

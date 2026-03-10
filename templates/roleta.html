@@ -1,406 +1,323 @@
 {% extends "base.html" %}
-{% load static %}
-
-{% block title %}Roleta de Bônus Diário{% endblock %}
-
 {% block content %}
-<div class="roulette-page-container">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+
+<div class="main-roulette-wrapper">
     
-    <!-- Header/Instruções -->
-    <div class="bonus-header">
-        <h1>💰 BÓNUS DIÁRIO EXCLUSIVO </h1>
-        <p class="subtitle">Gire a Roda da Fortuna para ganhar prémios instantâneos. Boa sorte!</p>
+    <div class="roulette-header">
+        <h2 class="title-gold">RODA DA FORTUNA</h2>
+        <div class="spins-badge">
+            <i class="fas fa-ticket-alt"></i>
+            <span>Giros: <strong id="spins-count">{{ roulette_spins }}</strong></span>
+        </div>
     </div>
 
-    <!-- Container Principal da Roleta (Card com fundo claro) -->
-    <div class="roulette-card-container">
-        
-        <!-- Informação de Giros -->
-        <div class="spins-info">
-            <p>Giros disponíveis: <span id="roulette-spins" class="spins-count">{% if roulette_spins %}{{ roulette_spins }}{% else %}0{% endif %}</span> 🎁</p>
-        </div>
-        
-        <!-- O token CSRF é necessário no HTML para que o cookie seja definido -->
-        {% csrf_token %}
-
-        <!-- Wrapper da Roda com Ponteiro -->
-        <div class="roulette-wheel-wrapper">
-            <!-- Ponteiro Fixo (Triângulo 3D/CSS) -->
-            <div class="roulette-pointer">
-                <i class="fas fa-caret-down"></i>
-            </div>
-            
-            <!-- CANVAS para a Roleta Desenho -->
-            <canvas id="roulette-canvas" width="400" height="400" class="roulette-wheel"></canvas>
-        </div>
-
-        <!-- Botão de Girar -->
-        <button type="button" class="spin-button" id="spin-button" {% if not roulette_spins or roulette_spins <= 0 %}disabled{% endif %}>
-            GIRAR E GANHAR
+    <div class="wheel-outer-container">
+        <div class="wheel-pointer"></div>
+        <div class="wheel-glow"></div>
+        <canvas id="wheelCanvas" width="340" height="340"></canvas>
+        <button id="spin-btn" {% if roulette_spins <= 0 %}disabled{% endif %}>
+            <span>GIRAR</span>
         </button>
-        
-        <!-- Resultado do Giro (Feedback) -->
-        <div class="roulette-result" id="roulette-result"></div>
+    </div>
+
+    <div class="winners-ticker-wrapper">
+        <div class="ticker-label">● AO VIVO</div>
+        <div class="ticker-content">
+            <div class="ticker-move">
+                {% for winner in recent_winners %}
+                <span class="ticker-item">
+                    <i class="fas fa-trophy" style="color:var(--gold)"></i> 
+                    +244 ****{{ winner.user.phone_number|slice:"-3:" }} ganhou <b>{{ winner.prize }} KZ</b>
+                </span>
+                {% empty %}
+                <span class="ticker-item">Aguardando novos giros da sorte...</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="winModal" class="win-modal">
+    <div class="win-content">
+        <div class="firework-icon">🎆</div>
+        <h3>PARABÉNS!</h3>
+        <p>Você ganhou</p>
+        <div class="win-amount" id="winAmountDisplay">0 KZ</div>
+        <button onclick="location.reload()" class="collect-btn">COLETAR PRÊMIO</button>
     </div>
 </div>
 
 <style>
-    /* 1. Fundo da Página (Branco/Suave) */
-    .roulette-page-container {
+    :root {
+        --gold: #FFD700;
+        --bg-dark: #0f0f0f;
+        --surface: #1a1a1a;
+    }
+
+    .main-roulette-wrapper {
+        font-family: 'Poppins', sans-serif;
+        background: var(--bg-dark);
+        min-height: 100vh;
         padding: 20px 10px;
-        min-height: 80vh;
-        background-color: #f0f4f8; /* Azul claro suave */
-        font-family: 'Inter', sans-serif;
+        color: white;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
-    /* 2. Cabeçalho */
-    .bonus-header {
-        text-align: center;
-        margin-bottom: 30px;
-        padding: 20px;
-    }
-    .bonus-header h1 {
-        font-size: 2.5rem;
-        color: #1a73e8; /* Azul primário forte */
-        text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.05);
-        margin-bottom: 5px;
+    .title-gold {
+        color: var(--gold);
         font-weight: 800;
-    }
-    .subtitle {
-        color: #5f6368;
-        font-style: italic;
-        font-size: 1.1rem;
-    }
-
-    /* 3. Card da Roleta (Foco Principal) */
-    .roulette-card-container {
-        background-color: #ffffff;
-        padding: 30px 20px;
-        border-radius: 20px;
-        margin: 0 auto;
-        max-width: 450px;
         text-align: center;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-        border: 1px solid #e0e0e0;
-        transition: transform 0.3s ease;
-    }
-    
-    /* 4. Informação de Giros */
-    .spins-info {
-        font-size: 1.2rem;
-        color: #3c4043;
-        font-weight: 500;
-        margin-bottom: 20px;
-        background-color: #e6f3ff;
-        padding: 10px;
-        border-radius: 8px;
-    }
-    .spins-count {
-        color: #d90429; /* Vermelho de alerta */
-        font-weight: bold;
-        font-size: 1.4rem;
+        letter-spacing: 1px;
+        margin-bottom: 5px;
+        font-size: 1.5rem;
     }
 
-    /* 5. Wrapper da Roda e Ponteiro */
-    .roulette-wheel-wrapper {
+    .spins-badge {
+        background: rgba(255, 215, 0, 0.1);
+        border: 1px solid var(--gold);
+        padding: 5px 15px;
+        border-radius: 50px;
+        color: var(--gold);
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+    }
+
+    /* Roleta Responsiva */
+    .wheel-outer-container {
         position: relative;
         width: 100%;
-        max-width: 400px;
-        margin: 20px auto 40px;
+        max-width: 340px;
+        aspect-ratio: 1/1;
+        margin: 0 auto 30px;
     }
-    
-    /* Ponteiro (Triângulo Físico) */
-    .roulette-pointer {
+
+    #wheelCanvas {
+        width: 100% !important;
+        height: auto !important;
+        z-index: 5;
+        border: 8px solid #222;
+        border-radius: 50%;
+        transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1);
+        background: #111;
+    }
+
+    .wheel-pointer {
         position: absolute;
-        top: -10px; /* Posição acima da roda */
+        top: -10px;
         left: 50%;
         transform: translateX(-50%);
-        z-index: 10;
-        color: #d90429; /* Vermelho Intenso */
-        font-size: 3rem;
-        text-shadow: 0 0 10px rgba(217, 4, 41, 0.8);
-    }
-    .roulette-pointer i {
-        /* Para usar um ícone (como o Font Awesome caret-down) como ponteiro */
-        display: block;
-        height: 20px;
-        overflow: hidden;
+        z-index: 20;
+        width: 35px;
+        height: 35px;
+        background: var(--gold);
+        clip-path: polygon(50% 100%, 0 0, 100% 0);
     }
 
-    /* Roda da Roleta (Canvas) */
-    .roulette-wheel {
-        width: 100%;
-        height: auto;
-        display: block;
+    #spin-btn {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 30;
+        width: 70px;
+        height: 70px;
         border-radius: 50%;
-        border: 12px solid #ffcc00; /* Borda Dourada Externa de Roleta */
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3), inset 0 0 15px rgba(0, 0, 0, 0.2);
-        /* Transição crucial para a animação do giro - Mais longo e suave */
-        transition: transform 6s cubic-bezier(0.25, 0.1, 0.25, 1.0); 
-    }
-    
-    /* 6. Botão de Girar */
-    .spin-button {
-        padding: 15px 40px;
-        background: linear-gradient(45deg, #1a73e8, #4285f4); /* Gradiente Azul */
-        color: #fff;
-        border: none;
-        border-radius: 50px;
-        font-size: 1.3rem;
+        border: 3px solid #000;
+        background: var(--gold);
+        color: #000;
+        font-weight: 800;
+        font-size: 0.8rem;
         cursor: pointer;
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+    }
+
+    /* Ticker de Vencedores Estilo News */
+    .winners-ticker-wrapper {
+        width: 100%;
+        max-width: 450px;
+        background: var(--surface);
+        border-radius: 10px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        border: 1px solid #333;
+    }
+
+    .ticker-label {
+        background: #ff4444;
+        font-size: 10px;
+        padding: 0 10px;
+        height: 100%;
+        display: flex;
+        align-items: center;
         font-weight: bold;
-        text-transform: uppercase;
-        box-shadow: 0 6px 15px rgba(26, 115, 232, 0.5);
-        transition: all 0.3s ease;
-    }
-    .spin-button:hover:not(:disabled) {
-        background: linear-gradient(45deg, #4285f4, #1a73e8);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(26, 115, 232, 0.7);
-    }
-    .spin-button:disabled {
-        background-color: #cccccc;
-        box-shadow: none;
-        cursor: not-allowed;
+        white-space: nowrap;
+        animation: blink 1s infinite;
     }
 
-    /* 7. Resultado */
-    .roulette-result {
-        margin-top: 30px;
-        padding: 10px;
-        font-size: 1.5rem;
-        font-weight: 900;
-        color: #d90429;
-        min-height: 25px;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    .ticker-content {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
     }
 
-    /* Responsividade */
-    @media (max-width: 500px) {
-        .bonus-header h1 {
-            font-size: 1.8rem;
-        }
-        .roulette-card-container {
-            padding: 20px 10px;
-        }
-        .spin-button {
-            font-size: 1.1rem;
-            padding: 12px 30px;
-        }
+    .ticker-move {
+        display: inline-block;
+        white-space: nowrap;
+        padding-left: 100%;
+        animation: ticker-animation 25s linear infinite;
+    }
+
+    .ticker-item {
+        margin-right: 50px;
+        font-size: 13px;
+        color: #ccc;
+    }
+
+    @keyframes ticker-animation {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-100%); }
+    }
+
+    /* Modal de Vitória (Fogo de Artifício) */
+    .win-modal {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.9);
+        z-index: 999;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .win-content {
+        background: #1a1a1a;
+        padding: 40px;
+        border-radius: 20px;
+        text-align: center;
+        border: 2px solid var(--gold);
+        box-shadow: 0 0 30px var(--gold);
+        animation: popIn 0.5s cubic-bezier(0.17, 0.89, 0.32, 1.27);
+    }
+
+    .win-amount {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--gold);
+        margin: 15px 0;
+    }
+
+    .collect-btn {
+        background: var(--gold);
+        border: none;
+        padding: 12px 30px;
+        border-radius: 50px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    @keyframes blink { 50% { opacity: 0.5; } }
+    @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    /* Ajustes para ecrãs muito pequenos */
+    @media (max-width: 320px) {
+        .title-gold { font-size: 1.2rem; }
+        #spin-btn { width: 60px; height: 60px; font-size: 0.7rem; }
     }
 </style>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const spinButton = document.getElementById('spin-button');
-        const canvas = document.getElementById('roulette-canvas');
-        const ctx = canvas.getContext('2d');
-        const resultDisplay = document.getElementById('roulette-result');
-        const spinsDisplay = document.getElementById('roulette-spins');
-        
-        // Dados da Roleta (Prêmios e Cores)
-        // O servidor Django deve retornar o prêmio em `data.prize_index` para que o JS saiba onde parar.
-        const prizes = [
-            { text: "1.000 KZ", color: "#FFD700" }, // Ouro
-            { text: "200 KZ", color: "#e74c3c" },   // Vermelho
-            { text: "GIRO EXTRA", color: "#2ecc71" }, // Verde
-            { text: "5.000 KZ", color: "#FFD700" },
-            { text: "100 KZ", color: "#e74c3c" },
-            { text: "SURPRESA", color: "#9b59b6" }, // Roxo
-            { text: "300 KZ", color: "#e74c3c" },
-            { text: "TENTA NOVAMENTE", color: "#3498db" } // Azul
-        ];
-        const numSegments = prizes.length;
-        const segmentAngle = 360 / numSegments; // Ângulo em graus
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+    const spinBtn = document.getElementById('spin-btn');
+    const winModal = document.getElementById('winModal');
+    const winAmountDisplay = document.getElementById('winAmountDisplay');
 
-        // Desenha a Roleta no Canvas
-        function drawRoulette() {
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const radius = centerX - 15; // Deixa espaço para a borda
-            
-            prizes.forEach((prize, index) => {
-                const startAngle = (index * segmentAngle - 90) * (Math.PI / 180);
-                const endAngle = ((index + 1) * segmentAngle - 90) * (Math.PI / 180);
+    const prizes = ["100", "200", "300", "500", "1000", "2000"]; 
+    const colors = ['#1a1a1a', '#FFD700', '#1a1a1a', '#FFD700', '#1a1a1a', '#FFD700'];
+    const textColors = ['#FFD700', '#1a1a1a', '#FFD700', '#1a1a1a', '#FFD700', '#1a1a1a'];
 
-                // Desenha o segmento
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-                ctx.lineTo(centerX, centerY);
-                ctx.closePath();
-                ctx.fillStyle = prize.color;
-                ctx.fill();
-                
-                // Desenha a borda (linhas divisórias)
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 3;
-                ctx.stroke();
+    function drawWheel() {
+        const total = prizes.length;
+        const arc = (Math.PI * 2) / total;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
 
-                // Adiciona o texto do prêmio
-                ctx.save();
-                ctx.translate(centerX, centerY);
-                
-                // Rotaciona para o meio do segmento
-                const textAngle = startAngle + (endAngle - startAngle) / 2;
-                ctx.rotate(textAngle);
-                
-                ctx.textAlign = "right";
-                ctx.fillStyle = (prize.color === "#FFD700") ? '#333' : '#fff'; // Cor do texto
-                ctx.font = 'bold 16px Inter, sans-serif';
-                // Posição do texto (70% do raio)
-                ctx.fillText(prize.text, radius * 0.7, 5); 
-                
-                ctx.restore();
-            });
-
-            // Desenha o círculo central
+        prizes.forEach((prize, i) => {
+            const angle = i * arc;
             ctx.beginPath();
-            ctx.arc(centerX, centerY, 50, 0, 2 * Math.PI);
-            ctx.fillStyle = '#f3f3f3';
+            ctx.fillStyle = colors[i];
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, centerX, angle, angle + arc);
             ctx.fill();
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 5;
-            ctx.stroke();
 
-            // Texto Central
-            ctx.font = 'bold 18px Inter, sans-serif';
-            ctx.fillStyle = '#333';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('BÔNUS', centerX, centerY - 10);
-            ctx.fillText('DIÁRIO', centerX, centerY + 15);
-        }
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(angle + arc / 2);
+            ctx.textAlign = "right";
+            ctx.fillStyle = textColors[i];
+            ctx.font = "bold 18px Poppins";
+            ctx.fillText(prize + " KZ", centerX - 25, 10);
+            ctx.restore();
+        });
+    }
 
-        // --- Lógica de Integração Django/Giro ---
-        
-        let currentRotation = 0; // Armazena a última rotação
-        let isSpinning = false;
+    drawWheel();
 
-        // Função para obter o token CSRF do cookie
-        function getCsrfToken() {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    let cookie = cookies[i].trim();
-                    if (cookie.startsWith('csrftoken=')) {
-                        cookieValue = decodeURIComponent(cookie.substring('csrftoken='.length));
-                        break;
-                    }
-                }
+    function launchFireworks() {
+        var duration = 5 * 1000;
+        var animationEnd = Date.now() + duration;
+        var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 };
+
+        function randomInRange(min, max) { return Math.random() * (max - min) + min; }
+
+        var interval = setInterval(function() {
+            var timeLeft = animationEnd - Date.now();
+            if (timeLeft <= 0) return clearInterval(interval);
+
+            var particleCount = 50 * (timeLeft / duration);
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+        }, 250);
+    }
+
+    spinBtn.addEventListener('click', function() {
+        spinBtn.disabled = true;
+
+        fetch("{% url 'spin_roulette' %}", {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const prizeIndex = prizes.indexOf(data.prize.toString());
+                const degreesPerPrize = 360 / prizes.length;
+                const extraSpins = 3600; 
+                const finalDegree = extraSpins + (360 - (prizeIndex * degreesPerPrize)) - (degreesPerPrize / 2);
+                
+                canvas.style.transform = `rotate(${finalDegree}deg)`;
+
+                setTimeout(() => {
+                    winAmountDisplay.innerText = data.prize + " KZ";
+                    winModal.style.display = "flex";
+                    launchFireworks();
+                }, 5500);
+            } else {
+                alert(data.message);
+                spinBtn.disabled = false;
             }
-            return cookieValue;
-        }
-        
-        const csrfToken = getCsrfToken();
-
-        // Função para atualizar o status do botão
-        const updateSpinButtonState = (spins) => {
-            spinButton.disabled = isSpinning || spins <= 0;
-            spinButton.textContent = spins <= 0 ? 'SEM GIROS' : 'GIRAR E GANHAR';
-        };
-
-        // Função para calcular o ângulo final com base no índice do prêmio
-        function calculateStopAngle(prizeIndex) {
-            // O ponteiro CSS aponta para o topo (90 graus)
-            // O centro do segmento 0 está a 180 + 22.5 (se 8 segmentos)
-            
-            // 1. Encontra o centro do segmento em graus (0 é o topo)
-            const targetAngleCenter = 360 - (prizeIndex * segmentAngle) - (segmentAngle / 2);
-            
-            // 2. Ajusta para a posição do ponteiro (roleta rotaciona no sentido horário, ponteiro está no topo)
-            // Queremos que o centro do segmento fique alinhado com o ponteiro (0 graus no topo do wrapper)
-            // A roleta começa em -90 graus (topo)
-            let rotationOffset = targetAngleCenter + 90;
-
-            // 3. Adiciona voltas completas (Mínimo de 5) e um pequeno offset aleatório para parecer mais real
-            const baseRotations = 7 * 360; // 7 voltas completas
-            const finalAngle = baseRotations + rotationOffset + (Math.random() * 20 - 10); // +- 10 graus de offset
-            
-            return finalAngle;
-        }
-
-
-        // --- Inicialização ---
-        drawRoulette();
-        let currentSpins = parseInt(spinsDisplay.textContent.trim()) || 0;
-        updateSpinButtonState(currentSpins);
-
-        // --- Event Listener ---
-        spinButton.addEventListener('click', function() {
-            if (isSpinning) return;
-            
-            currentSpins = parseInt(spinsDisplay.textContent.trim()) || 0;
-            if (currentSpins <= 0) {
-                resultDisplay.textContent = '❌ Sem giros disponíveis.';
-                updateSpinButtonState(currentSpins);
-                return;
-            }
-            
-            isSpinning = true;
-            updateSpinButtonState(currentSpins);
-            resultDisplay.textContent = 'Girando... ⏳';
-
-            // 1. Comunicação com Django (rota: spin_roulette)
-            fetch('{% url "spin_roulette" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                },
-                body: JSON.stringify({}) 
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Erro na resposta do servidor (' + response.status + ')');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success && data.prize_index !== undefined) {
-                    const prizeIndex = parseInt(data.prize_index);
-                    if (isNaN(prizeIndex) || prizeIndex < 0 || prizeIndex >= prizes.length) {
-                        throw new Error("Índice do prêmio inválido retornado pelo servidor.");
-                    }
-                    
-                    const finalRotation = calculateStopAngle(prizeIndex);
-
-                    // 2. Aplica o giro no Canvas
-                    canvas.style.transform = `rotate(${finalRotation}deg)`;
-                    
-                    // 3. Espera o tempo da transição (6 segundos definidos no CSS)
-                    setTimeout(() => {
-                        const prizeWon = prizes[prizeIndex].text;
-                        resultDisplay.textContent = `🎉 PARABÉNS! Você ganhou: ${prizeWon} 🎉`;
-                        
-                        // Atualiza os giros restantes no front-end
-                        currentSpins = currentSpins - 1;
-                        spinsDisplay.textContent = currentSpins;
-                        
-                        isSpinning = false;
-                        updateSpinButtonState(currentSpins);
-
-                        // Opcional: Reseta o CSS transform para o novo zero-ponto
-                        // currentRotation = finalRotation % 360;
-                        // canvas.style.transition = 'none';
-                        // canvas.style.transform = `rotate(${currentRotation}deg)`;
-                        // setTimeout(() => { canvas.style.transition = 'transform 6s cubic-bezier(0.25, 0.1, 0.25, 1.0)'; }, 50);
-
-                    }, 6000); // Deve ser igual ao tempo de transição do CSS
-                } else {
-                    // Caso a API retorne erro (ex: sem giros)
-                    resultDisplay.textContent = `❌ ${data.message || 'Erro desconhecido do servidor.'}`;
-                    isSpinning = false;
-                    updateSpinButtonState(currentSpins); 
-                }
-            })
-            .catch(error => {
-                console.error('Erro de Rede/API:', error);
-                resultDisplay.textContent = 'Ocorreu um erro de rede. Tente novamente.';
-                isSpinning = false;
-                updateSpinButtonState(currentSpins);
-            });
         });
     });
 </script>
+
 {% endblock %}

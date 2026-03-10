@@ -4,632 +4,318 @@
 {% block title %}Depósito{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>DEPÓSITO</h1>
+<div class="deposit-container">
+    {% if deposit_success %}
+        {# ---------------------- TELA DE SUCESSO ---------------------- #}
+        <div class="success-screen">
+            <div class="success-icon-wrapper">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2>Enviado com Sucesso!</h2>
+            <p>Aguarde a aprovação. O seu depósito será confirmado em 5 a 45 minutos.</p>
+            <a href="{% url 'menu' %}" class="btn-back-menu">Voltar ao Menu</a>
+        </div>
+    {% else %}
+        {# ---------------------- TELA DE FLUXO ---------------------- #}
+        <div class="deposit-card">
+            <h2 class="main-title"><i class="fas fa-wallet"></i> DEPÓSITO</h2>
+
+            <div class="step-indicator-custom">
+                <div class="step-item" id="ind-1">
+                    <div class="step-circle active">1</div>
+                    <span>Quantia</span>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step-item" id="ind-2">
+                    <div class="step-circle">2</div>
+                    <span>Pagar</span>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step-item" id="ind-3">
+                    <div class="step-circle">3</div>
+                    <span>Validar</span>
+                </div>
+            </div>
+
+            <form id="deposit-form" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="{{ form.amount.name }}" id="id_amount" value="">
+                <input type="hidden" name="{{ form.payer_name.name }}" id="id_payer_name_hidden" value="">
+                <input type="hidden" name="selected_bank_iban" id="id_selected_bank_iban" value="">
+
+                {# ETAPA 1: ESCOLHER VALOR #}
+                <div id="step-1" class="step-content active">
+                    <p class="section-label">Selecione um valor rápido:</p>
+                    <div class="amount-grid">
+                        {% for deposit_value in level_deposits_list %}
+                            <button type="button" class="btn-amount" data-amount="{{ deposit_value }}">
+                                {{ deposit_value|floatformat:0 }} KZ
+                            </button>
+                        {% endfor %}
+                    </div>
+
+                    <div class="input-group-modern">
+                        <label>Ou digite o valor:</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-coins"></i>
+                            <input type="number" id="id_custom_amount" placeholder="Mínimo 100 KZ">
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-next" data-next-step="2" id="btn-step-1-next" disabled>
+                        Próximo Passo <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                {# ETAPA 2: PAGAMENTO #}
+                <div id="step-2" class="step-content" style="display: none;">
+                    <div class="bank-card">
+                        <div class="bank-card-header">
+                            <i class="fas fa-university"></i>
+                            <select id="bank-select" class="modern-select">
+                                <option value="" disabled selected>Selecione o Banco de Destino</option>
+                                {% for bank_detail in platform_bank_details %}
+                                    <option value="{{ forloop.counter }}" 
+                                            data-iban="{{ bank_detail.IBAN }}" 
+                                            data-holder="{{ bank_detail.account_holder_name }}" 
+                                            data-bank-name="{{ bank_detail.bank_name }}">
+                                        {{ bank_detail.bank_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div id="bank-info-display" class="bank-details-body" style="display: none;">
+                            <div class="detail-item">
+                                <small>Titular</small>
+                                <div class="copy-box">
+                                    <span id="display-holder-name">---</span>
+                                    <button type="button" class="btn-copy" data-copy-target="display-holder-name"><i class="far fa-copy"></i></button>
+                                </div>
+                            </div>
+                            <div class="detail-item">
+                                <small>IBAN</small>
+                                <div class="copy-box">
+                                    <span id="display-iban">---</span>
+                                    <button type="button" class="btn-copy" data-copy-target="display-iban"><i class="far fa-copy"></i></button>
+                                </div>
+                            </div>
+                            <div class="detail-item highlight">
+                                <small>Valor a Transferir</small>
+                                <div class="copy-box">
+                                    <span id="display-amount-text">0.00 KZ</span>
+                                    <button type="button" class="btn-copy" data-copy-target="display-amount-text"><i class="far fa-copy"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button type="button" class="btn-prev" data-prev-step="1">Voltar</button>
+                        <button type="button" class="btn-next" data-next-step="3" id="btn-step-2-next" disabled>Já paguei <i class="fas fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                {# ETAPA 3: COMPROVATIVO #}
+                <div id="step-3" class="step-content" style="display: none;">
+                    <div class="upload-container">
+                        <label for="{{ form.proof_of_payment.id_for_label }}" class="upload-box">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span id="file-name-display">Anexar Comprovativo (Imagem)</span>
+                        </label>
+                        <input type="file" name="{{ form.proof_of_payment.name }}" id="{{ form.proof_of_payment.id_for_label }}" accept="image/*" class="hidden-input">
+                    </div>
+
+                    <div class="input-group-modern mt-20">
+                        <label>Nome do Depositante:</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user-edit"></i>
+                            <input type="text" id="id_payer_name" placeholder="Como aparece no banco">
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button type="button" class="btn-prev" data-prev-step="2">Voltar</button>
+                        <button type="submit" class="btn-submit" id="submit-deposit-button" disabled>Finalizar Depósito</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    {% endif %}
 </div>
 
-{% if deposit_success %}
-    {# ---------------------- TELA DE SUCESSO ---------------------- #}
-    <div class="success-screen">
-        {# Usando um ícone Font Awesome para evitar dependência de imagem local, mas se tiver a 'success_icon.png', pode mantê-la. #}
-        <i class="fas fa-check-circle success-icon-custom"></i>
-        <h2>Depósito Enviado com Sucesso! ✅</h2>
-        <p>Aguarde a aprovação. O seu depósito está a ser processado e será confirmado em 5 a 45 minutos.</p>
-        <a href="{% url 'menu' %}" class="submit-button back-to-menu-button">Voltar ao Menu</a>
-    </div>
-{% else %}
-    <div class="page-content">
-        {# O indicador de etapas foi redesenhado para seguir o fluxo JackPay, usando apenas números e texto. #}
-        <div class="step-indicator-jackpay">
-            <div class="step-item">
-                <div class="step-circle active" id="indicator-1">1</div>
-                <span>Escolher</span>
-            </div>
-            <div class="step-line"></div>
-            <div class="step-item">
-                <div class="step-circle" id="indicator-2">2</div>
-                <span>Pagar</span>
-            </div>
-            <div class="step-line"></div>
-            <div class="step-item">
-                <div class="step-circle" id="indicator-3">3</div>
-                <span>Comprovativo</span>
-            </div>
-        </div>
-
-        <form id="deposit-form" method="post" enctype="multipart/form-data" class="form-style">
-            {% csrf_token %}
-            {# Campo escondido para o valor selecionado #}
-            <input type="hidden" name="{{ form.amount.name }}" id="id_amount" value="">
-            
-            {# Campo escondido para o nome do pagador (Adicionado ao passo 3, mas o Django precisa dele) #}
-            <input type="hidden" name="{{ form.payer_name.name }}" id="id_payer_name_hidden" value="">
-            
-            {# Campo escondido para o IBAN/Banco selecionado #}
-            <input type="hidden" name="selected_bank_iban" id="id_selected_bank_iban" value="">
-
-            {# ---------------------- ETAPA 1: ESCOLHER VALOR (IMAGEM 1) ---------------------- #}
-            <div id="step-1" class="step-container active">
-                <h3 class="step-title-custom">Recarga</h3>
-                <p class="step-info">Selecione ou insira o valor do depósito.</p>
-
-                <div class="valor-rapido-grid">
-                    {% for deposit_value in level_deposits_list %}
-                        <button type="button" class="amount-button" data-amount="{{ deposit_value }}">
-                            {{ deposit_value|floatformat:0 }}
-                        </button>
-                    {% empty %}
-                        <p class="error-message">Nenhum valor de depósito de Nível encontrado. Contacte o suporte.</p>
-                    {% endfor %}
-                </div>
-
-                <div class="form-group-custom">
-                    <label for="id_custom_amount" class="input-label-custom">Valor do Depósito</label>
-                    <input type="number" id="id_custom_amount" placeholder="Ou insira outro valor" min="100" class="custom-input-field">
-                </div>
-                
-                <button type="button" class="next-button primary-button" data-next-step="2" id="btn-step-1-next" disabled>
-                    Próxima Etapa (Pagar) ➡️
-                </button>
-            </div>
-
-            {# ---------------------- ETAPA 2: PAGAR / SELECIONAR BANCO (IMAGEM 2 & 3) ---------------------- #}
-            <div id="step-2" class="step-container" style="display: none;">
-                <div class="jackpay-box">
-                    <img src="{% static 'images/jackpay_logo.png' %}" alt="JackPay Logo" class="jackpay-logo">
-                    <div class="jackpay-header">
-                        <p class="jackpay-title">Método de Pagamento</p>
-                        <select id="bank-select" class="bank-select-field">
-                            <option value="" disabled selected>Escolha um Banco</option>
-                            {% for bank_detail in platform_bank_details %}
-                                <option value="{{ forloop.counter }}" data-iban="{{ bank_detail.IBAN }}" data-holder="{{ bank_detail.account_holder_name }}" data-bank-name="{{ bank_detail.bank_name }}">
-                                    {{ bank_detail.bank_name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div id="bank-info-display" class="bank-info-display" style="display: none;">
-                        {# Detalhes do Banco Selecionado serão injetados aqui via JS #}
-                        <div class="info-row">
-                            <label>Método de Pagamento</label>
-                            <span id="display-bank-name">ATL</span>
-                            <button type="button" class="copy-detail" data-copy-target="display-bank-name">📋</button>
-                        </div>
-                        <div class="info-row">
-                            <label>Nome do Usuário</label>
-                            <span id="display-holder-name">Paiva De Oliveira Diamantino Burica</span>
-                            <button type="button" class="copy-detail" data-copy-target="display-holder-name">📋</button>
-                        </div>
-                        <div class="info-row">
-                            <label>Número da Conta</label>
-                            <span id="display-iban">005500005136914310187</span>
-                            <button type="button" class="copy-detail" data-copy-target="display-iban">📋</button>
-                        </div>
-                        <div class="info-row">
-                            <label>Valor do Pagamento</label>
-                            <span id="display-amount-text" class="amount-highlight">0.00</span>
-                            <button type="button" class="copy-detail" data-copy-target="display-amount-text">📋</button>
-                        </div>
-                    </div>
-                </div>
-
-                <button type="button" class="next-button primary-button large-button" data-next-step="3" id="btn-step-2-next" disabled>
-                    Pagar e Próximo (Comprovativo) ➡️
-                </button>
-                <button type="button" class="prev-button secondary-button large-button" data-prev-step="1">
-                    Voltar à Etapa 1
-                </button>
-            </div>
-
-            {# ---------------------- ETAPA 3: COMPROVATIVO (IMAGEM 3) ---------------------- #}
-            <div id="step-3" class="step-container" style="display: none;">
-                <h3 class="step-title-custom">Comprovativo</h3>
-
-                {# ESTILO DO UPLOAD IMITANDO A IMAGEM #}
-                <div class="upload-area-custom">
-                    <label for="{{ form.proof_of_payment.id_for_label }}" class="upload-label-icon">
-                        <i class="fas fa-cloud-upload-alt upload-icon-large"></i>
-                        <span id="file-name-display">Carregar comprovante de pagamento</span>
-                    </label>
-                    <input type="file" name="{{ form.proof_of_payment.name }}" id="{{ form.proof_of_payment.id_for_label }}" accept="image/*" required class="file-input-custom">
-                </div>
-
-                <div class="form-group-custom mt-20">
-                    <label for="id_payer_name" class="input-label-custom">Nome do Pagador</label>
-                    <input type="text" name="payer_name_display" id="id_payer_name" placeholder="O seu nome na conta bancária" required class="custom-input-field">
-                </div>
-
-                <button type="submit" class="submit-button success-button large-button" id="submit-deposit-button" disabled>
-                    Enviar
-                </button>
-                <button type="button" class="prev-button secondary-button large-button" data-prev-step="2">
-                    Etapa anterior
-                </button>
-            </div>
-        </form>
-    </div>
-{% endif %}
-
 <style>
-    /* ------------------------------------------------------------------- */
-    /* ESTILOS DE DEPOSITO PERSONALIZADOS PARA JACKPAY / 3 ETAPAS */
-    /* ------------------------------------------------------------------- */
-
-    /* Fundo Principal */
-    body {
-        background-color: #f7f7f7;
-        color: #333;
-        font-family: Arial, sans-serif;
+    :root {
+        --primary-gold: #fbbc05;
+        --dark-bg: #121212; /* Cor de fundo do arquivo de saque */
+        --card-bg: #1e1e1e;
+        --text-main: #ffffff;
+        --text-dim: #b3b3b3;
+        --accent-purple: #6f42c1;
+        --success-green: #38c172;
     }
 
-    /* Cabeçalho e Contentor Principal */
-    .page-header {
-        display: none; /* O título "Depósito" já está no JackPay Header */
-    }
-    .page-content, .success-screen {
-        background-color: #ffffff;
-        padding: 20px 20px 40px 20px;
-        margin: 0 auto;
-        max-width: 400px; /* Mais estreito para mobile-first */
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        border-radius: 0;
-        min-height: 100vh; /* Ocupa a altura total em mobile */
-    }
+    body { background-color: var(--dark-bg); color: var(--text-main); font-family: 'Segoe UI', Roboto, sans-serif; }
+
+    .deposit-container { padding: 20px; display: flex; justify-content: center; min-height: 90vh; }
+    .deposit-card { background: var(--card-bg); width: 100%; max-width: 450px; border-radius: 15px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #333; }
     
-    .step-title-custom {
-        font-size: 1.3rem;
-        font-weight: 700;
-        color: #333;
-        text-align: center;
-        margin-bottom: 25px;
-        padding-bottom: 5px;
-        border-bottom: 1px solid #eee;
-    }
-    .step-info {
-        text-align: center;
-        color: #6c757d;
-        margin-bottom: 20px;
-        font-size: 0.95rem;
-    }
+    .main-title { text-align: center; color: var(--primary-gold); margin-bottom: 30px; font-weight: 800; letter-spacing: 1px; }
 
-    /* --- Indicador de Etapas (JackPay Style) --- */
-    .step-indicator-jackpay {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin: 20px 0 30px 0;
-        position: relative;
-    }
-    .step-indicator-jackpay .step-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        flex: 1;
-        min-width: 0;
-        text-align: center;
-    }
-    .step-indicator-jackpay .step-circle {
-        width: 35px;
-        height: 35px;
-        border-radius: 50%;
-        background-color: #e9ecef;
-        color: #6c757d;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        transition: background-color 0.3s, border-color 0.3s, color 0.3s;
-        z-index: 20;
-        border: 2px solid #ccc;
-    }
-    .step-indicator-jackpay .step-circle.active {
-        background-color: #38c172; /* Cor de sucesso/ativo */
-        color: white;
-        border-color: #38c172;
-    }
-    .step-indicator-jackpay .step-line {
-        flex: 1;
-        height: 3px;
-        background-color: #e9ecef;
-        position: absolute;
-        top: 17px;
-        left: 0;
-        right: 0;
-        margin: 0 15%; /* Ajusta o início/fim da linha */
-        z-index: 10;
-    }
-    .step-indicator-jackpay span {
-        font-size: 0.8rem;
-        margin-top: 5px;
-        color: #6c757d;
-    }
-    /* Estilos para a linha quando o passo anterior estiver completo (não estritamente necessário no JS, mas bom para CSS) */
-    .step-indicator-jackpay .step-item:nth-child(1) ~ .step-line {
-        /* Lógica complexa para preenchimento da linha omitida para simplicidade */
-    }
+    /* Indicador de Etapas */
+    .step-indicator-custom { display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; }
+    .step-item { display: flex; flex-direction: column; align-items: center; z-index: 2; }
+    .step-circle { width: 32px; height: 32px; border-radius: 50%; background: #333; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; margin-bottom: 8px; transition: 0.3s; border: 2px solid #444; }
+    .step-circle.active { background: var(--primary-gold); color: #000; border-color: var(--primary-gold); }
+    .step-item span { font-size: 11px; color: var(--text-dim); text-transform: uppercase; }
+    .step-connector { flex: 1; height: 2px; background: #333; margin-top: -20px; }
 
+    /* Grid de Valores */
+    .amount-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 25px; }
+    .btn-amount { background: #2a2a2a; border: 1px solid #444; color: #fff; padding: 12px 5px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: 600; }
+    .btn-amount.active { background: var(--primary-gold); color: #000; border-color: var(--primary-gold); transform: scale(1.05); }
 
-    /* --- ETAPA 1: Seleção de Valor (Grid) --- */
-    .valor-rapido-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        margin-bottom: 20px;
-    }
-    .amount-button {
-        background-color: #f0f0f0;
-        color: #333;
-        border: 1px solid #ddd;
-        padding: 15px 5px;
-        border-radius: 8px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-size: 1.1rem;
-    }
-    .amount-button.active {
-        background-color: #fbbc05; /* Amarelo/Dourado como na imagem 1 */
-        color: #111;
-        border-color: #fbbc05;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
-    .form-group-custom {
-        margin-bottom: 20px;
-    }
-    .input-label-custom {
-        display: block;
-        font-size: 0.9rem;
-        color: #6c757d;
-        margin-bottom: 5px;
-    }
-    .custom-input-field {
-        width: 100%;
-        padding: 12px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        font-size: 1rem;
-        box-sizing: border-box;
-    }
+    /* Inputs Modernos */
+    .input-group-modern { margin-bottom: 20px; }
+    .input-group-modern label { display: block; margin-bottom: 8px; color: var(--text-dim); font-size: 13px; }
+    .input-wrapper { position: relative; display: flex; align-items: center; }
+    .input-wrapper i { position: absolute; left: 15px; color: var(--primary-gold); }
+    .input-wrapper input, .modern-select { width: 100%; background: #2a2a2a; border: 1px solid #444; padding: 12px 12px 12px 40px; border-radius: 8px; color: #fff; font-size: 16px; transition: 0.3s; }
+    .modern-select { padding-left: 15px; cursor: pointer; }
+    .input-wrapper input:focus { border-color: var(--primary-gold); outline: none; background: #333; }
 
+    /* Card de Banco */
+    .bank-card { background: #252525; border-radius: 12px; border: 1px solid #383838; overflow: hidden; margin-bottom: 25px; }
+    .bank-card-header { padding: 15px; background: #2a2a2a; display: flex; align-items: center; gap: 10px; }
+    .bank-details-body { padding: 15px; border-top: 1px solid #333; }
+    .detail-item { margin-bottom: 12px; }
+    .detail-item small { color: var(--text-dim); font-size: 11px; display: block; }
+    .copy-box { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 8px 12px; border-radius: 6px; margin-top: 4px; border: 1px solid #333; }
+    .copy-box span { font-family: monospace; font-size: 14px; word-break: break-all; padding-right: 10px; }
+    .btn-copy { background: none; border: none; color: var(--primary-gold); cursor: pointer; padding: 5px; }
+    .highlight span { color: var(--primary-gold); font-weight: bold; font-size: 18px; }
 
-    /* --- ETAPA 2: JackPay Look (Pagar) --- */
-    .jackpay-box {
-        border: 1px solid #e0e0e0;
-        border-radius: 10px;
-        overflow: hidden;
-        margin-bottom: 25px;
-    }
-    .jackpay-logo {
-        display: none; /* A logo da JackPay na imagem é um placeholder */
-    }
-    .jackpay-header {
-        background-color: #e8eaf6; /* Cor de fundo suave */
-        padding: 15px;
-        text-align: center;
-        border-bottom: 1px solid #dcdcdc;
-    }
-    .jackpay-title {
-        font-weight: bold;
-        color: #6f42c1;
-        font-size: 1.1rem;
-        margin: 0;
-    }
-    .bank-select-field {
-        width: 100%;
-        padding: 10px;
-        margin-top: 10px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-    }
-    
-    .bank-info-display {
-        padding: 15px;
-    }
-    .info-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 0;
-        border-bottom: 1px solid #eee;
-        font-size: 0.95rem;
-    }
-    .info-row:last-child {
-        border-bottom: none;
-    }
-    .info-row label {
-        font-weight: normal;
-        color: #6c757d;
-        flex: 1;
-    }
-    .info-row span {
-        font-weight: bold;
-        color: #333;
-        margin-right: 10px;
-        text-align: right;
-        word-break: break-word; /* Para números longos */
-    }
-    .info-row .amount-highlight {
-        color: #fbbc05; /* Amarelo */
-        font-size: 1.05rem;
-    }
-    .copy-detail {
-        background: none;
-        border: none;
-        color: #6f42c1;
-        font-size: 1.1rem;
-        cursor: pointer;
-        padding: 0 5px;
-    }
-    
-    /* --- ETAPA 3: Upload do Comprovativo (Estilo Imagem 3) --- */
-    .upload-area-custom {
-        text-align: center;
-        margin: 30px 0;
-        border: 2px dashed #ccc;
-        border-radius: 10px;
-        padding: 40px 20px;
-        background-color: #fafafa;
-    }
-    .upload-label-icon {
-        display: block;
-        cursor: pointer;
-        color: #6c757d;
-    }
-    .upload-icon-large {
-        font-size: 3rem;
-        color: #6f42c1;
-        margin-bottom: 10px;
-        display: block;
-    }
-    .file-input-custom {
-        display: none; /* Esconder o input de arquivo padrão */
-    }
-    .mt-20 {
-        margin-top: 20px;
-    }
+    /* Upload */
+    .upload-box { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; border: 2px dashed #444; border-radius: 12px; cursor: pointer; background: #252525; transition: 0.3s; }
+    .upload-box:hover { border-color: var(--primary-gold); background: #2a2a2a; }
+    .upload-box i { font-size: 40px; color: var(--primary-gold); margin-bottom: 10px; }
+    .hidden-input { display: none; }
 
-    /* --- Botões e Estilos Comuns --- */
-    .large-button {
-        padding: 15px !important;
-        font-size: 1.1rem !important;
-        margin-top: 20px !important;
-        width: 100%;
-        font-weight: bold;
-        border-radius: 8px;
-    }
-    .primary-button { background-color: #6f42c1; color: #fff; }
-    .secondary-button { background-color: #6c757d; color: #fff; }
-    .success-button { background-color: #38c172; color: #fff; }
+    /* Botões de Ação */
+    .action-buttons { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-next, .btn-submit, .btn-back-menu { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; }
+    .btn-next { background: var(--primary-gold); color: #000; }
+    .btn-next:disabled { background: #444; color: #888; cursor: not-allowed; }
+    .btn-submit { background: var(--success-green); color: #fff; }
+    .btn-submit:disabled { background: #2a4a38; color: #666; cursor: not-allowed; }
+    .btn-prev { background: #444; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
 
-    /* --- Tela de Sucesso Reestilizada --- */
-    .success-screen {
-        text-align: center;
-        padding-top: 50px;
-        min-height: 80vh;
-    }
-    .success-icon-custom {
-        font-size: 4rem;
-        color: #38c172;
-        margin-bottom: 20px;
-    }
-    .success-screen h2 {
-        color: #333;
-        font-size: 1.8rem;
-        margin-bottom: 10px;
-    }
-    .success-screen p {
-        color: #6c757d;
-        margin-bottom: 30px;
-    }
-    .back-to-menu-button {
-        background-color: #6f42c1;
-        color: white;
-        text-decoration: none;
-        display: inline-block;
-        width: auto;
-        padding: 15px 30px;
-    }
+    /* Tela de Sucesso */
+    .success-screen { text-align: center; padding: 40px 10px; }
+    .success-icon-wrapper { font-size: 70px; color: var(--success-green); margin-bottom: 20px; }
+    .btn-back-menu { background: var(--accent-purple); color: #fff; text-decoration: none; display: inline-block; }
 </style>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- Elementos Comuns e Estado ---
-        const steps = [
-            document.getElementById('step-1'),
-            document.getElementById('step-2'),
-            document.getElementById('step-3')
-        ];
-        const indicators = [
-            document.getElementById('indicator-1'),
-            document.getElementById('indicator-2'),
-            document.getElementById('indicator-3')
-        ];
         let currentStep = 1;
-
         let selectedAmount = null;
 
-        // --- Funções de Utilidade ---
-        const formatCurrency = (value) => {
-            return parseFloat(value).toFixed(2);
-        };
+        const steps = [document.getElementById('step-1'), document.getElementById('step-2'), document.getElementById('step-3')];
+        const indicators = [document.getElementById('ind-1'), document.getElementById('ind-2'), document.getElementById('ind-3')];
 
-        const updateStepVisibility = () => {
-            steps.forEach((step, index) => {
-                const stepNum = index + 1;
-                step.style.display = stepNum === currentStep ? 'block' : 'none';
-
-                if (indicators[index]) {
-                    indicators[index].classList.toggle('active', stepNum <= currentStep);
-                    indicators[index].innerText = stepNum; // Garante que o número está visível
-                }
+        const updateUI = () => {
+            steps.forEach((s, i) => s.style.display = (i + 1 === currentStep) ? 'block' : 'none');
+            indicators.forEach((ind, i) => {
+                const circle = ind.querySelector('.step-circle');
+                circle.classList.toggle('active', i + 1 <= currentStep);
             });
             window.scrollTo(0, 0);
         };
 
-        // --- Lógica Geral de Navegação (MANTIDA a estrutura) ---
-        document.querySelectorAll('.next-button').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const nextStep = parseInt(e.target.dataset.nextStep);
-                
-                // Validação Específica para a Etapa 1
-                if (currentStep === 1) {
-                    if (selectedAmount === null || parseFloat(selectedAmount) <= 0) {
-                        alert('Por favor, selecione ou insira um valor de depósito válido.');
-                        return;
-                    }
-                }
-                
-                // Validação Específica para a Etapa 2
-                if (currentStep === 2) {
-                    const selectedBankOption = document.getElementById('bank-select').value;
-                    if (!selectedBankOption) {
-                        alert('Por favor, selecione um banco para continuar.');
-                        return;
-                    }
-                    // Força a atualização do campo hidden para o IBAN
-                    const selectedBankElement = document.getElementById('bank-select').options[document.getElementById('bank-select').selectedIndex];
-                    const iban = selectedBankElement.getAttribute('data-iban');
-                    document.getElementById('id_selected_bank_iban').value = iban;
-                }
+        // Lógica de Valores
+        const btnNext1 = document.getElementById('btn-step-1-next');
+        const customInp = document.getElementById('id_custom_amount');
+        const hiddenAmt = document.getElementById('id_amount');
 
-                currentStep = nextStep;
-                updateStepVisibility();
-            });
-        });
-
-        document.querySelectorAll('.prev-button').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const prevStep = parseInt(e.target.dataset.prevStep);
-                currentStep = prevStep;
-                updateStepVisibility();
-            });
-        });
-
-
-        // --- Etapa 1: Seleção do Valor (Recarga) ---
-        const amountButtons = document.querySelectorAll('.amount-button');
-        const customAmountInput = document.getElementById('id_custom_amount');
-        const amountHiddenInput = document.getElementById('id_amount');
-        const nextButtonStep1 = document.getElementById('btn-step-1-next');
-
-        const updateAmountSelection = (amount) => {
-            selectedAmount = amount;
-            amountHiddenInput.value = amount;
-            nextButtonStep1.disabled = (parseFloat(amount) <= 0);
-
-            // Atualiza o display do valor na Etapa 2
-            const displayAmount = document.getElementById('display-amount-text');
-            if (displayAmount) {
-                displayAmount.innerText = formatCurrency(amount) + " KZ";
-            }
+        const setAmount = (val) => {
+            selectedAmount = val;
+            hiddenAmt.value = val;
+            document.getElementById('display-amount-text').innerText = parseFloat(val).toLocaleString() + " KZ";
+            btnNext1.disabled = !(val > 0);
         };
+
+        document.querySelectorAll('.btn-amount').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.btn-amount').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                customInp.value = '';
+                setAmount(btn.dataset.amount);
+            });
+        });
+
+        customInp.addEventListener('input', () => {
+            document.querySelectorAll('.btn-amount').forEach(b => b.classList.remove('active'));
+            setAmount(customInp.value);
+        });
+
+        // Navegação
+        document.querySelectorAll('.btn-next').forEach(b => {
+            b.addEventListener('click', () => {
+                currentStep = parseInt(b.dataset.nextStep);
+                updateUI();
+            });
+        });
+
+        document.querySelectorAll('.btn-prev').forEach(b => {
+            b.addEventListener('click', () => {
+                currentStep = parseInt(b.dataset.prevStep);
+                updateUI();
+            });
+        });
+
+        // Seleção de Banco
+        const bankSel = document.getElementById('bank-select');
+        const btnNext2 = document.getElementById('btn-step-2-next');
         
-        // Seleção por Botão
-        amountButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                amountButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-                customAmountInput.value = ''; // Limpa o input personalizado
-                updateAmountSelection(button.dataset.amount);
+        bankSel.addEventListener('change', () => {
+            const opt = bankSel.options[bankSel.selectedIndex];
+            document.getElementById('display-holder-name').innerText = opt.dataset.holder;
+            document.getElementById('display-iban').innerText = opt.dataset.iban;
+            document.getElementById('id_selected_bank_iban').value = opt.dataset.iban;
+            document.getElementById('bank-info-display').style.display = 'block';
+            btnNext2.disabled = false;
+        });
+
+        // Copiar
+        document.querySelectorAll('.btn-copy').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const text = document.getElementById(btn.dataset.copyTarget).innerText.replace(' KZ', '');
+                navigator.clipboard.writeText(text);
+                const icon = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => btn.innerHTML = icon, 1500);
             });
         });
 
-        // Seleção por Input Personalizado
-        customAmountInput.addEventListener('input', () => {
-            amountButtons.forEach(btn => btn.classList.remove('active'));
-            const value = customAmountInput.value.trim();
-            if (value && parseFloat(value) > 0) {
-                updateAmountSelection(value);
-            } else {
-                updateAmountSelection(null);
-            }
-        });
+        // Upload e Finalização
+        const fileInp = document.querySelector('.hidden-input');
+        const payerInp = document.getElementById('id_payer_name');
+        const btnSubmit = document.getElementById('submit-deposit-button');
 
-
-        // --- Etapa 2: Seleção do Banco (Pagar) ---
-        const bankSelect = document.getElementById('bank-select');
-        const bankInfoDisplay = document.getElementById('bank-info-display');
-        const nextButtonStep2 = document.getElementById('btn-step-2-next');
-
-        bankSelect.addEventListener('change', (e) => {
-            const selectedOption = e.target.options[e.target.selectedIndex];
-            const bankName = selectedOption.getAttribute('data-bank-name');
-            const holderName = selectedOption.getAttribute('data-holder');
-            const iban = selectedOption.getAttribute('data-iban');
-
-            if (iban) {
-                document.getElementById('display-bank-name').innerText = bankName;
-                document.getElementById('display-holder-name').innerText = holderName;
-                document.getElementById('display-iban').innerText = iban;
-                bankInfoDisplay.style.display = 'block';
-                nextButtonStep2.disabled = false;
-            } else {
-                bankInfoDisplay.style.display = 'none';
-                nextButtonStep2.disabled = true;
-            }
-        });
-
-        // Lógica de Copiar Detalhes
-        document.querySelectorAll('.copy-detail').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const targetId = e.target.dataset.copyTarget;
-                const textToCopy = document.getElementById(targetId).innerText.replace(' KZ', '').trim();
-                
-                navigator.clipboard.writeText(textToCopy)
-                    .then(() => {
-                        const originalText = e.target.innerText;
-                        e.target.innerText = '✅';
-                        setTimeout(() => {
-                            e.target.innerText = originalText;
-                        }, 1500);
-                    })
-                    .catch(err => {
-                        console.error('Falha ao copiar: ', err);
-                        alert('Falha ao copiar. Tente manualmente.');
-                    });
-            });
-        });
-
-
-        // --- Etapa 3: Comprovativo ---
-        const proofInput = document.getElementById('{{ form.proof_of_payment.id_for_label }}');
-        const fileNameDisplay = document.getElementById('file-name-display');
-        const submitButton = document.getElementById('submit-deposit-button');
-        const payerNameInput = document.getElementById('id_payer_name');
-        const payerNameHidden = document.getElementById('id_payer_name_hidden');
-
-        // Função para verificar se o envio é permitido
-        const checkSubmissionEligibility = () => {
-            const fileUploaded = proofInput && proofInput.files.length > 0;
-            const nameProvided = payerNameInput.value.trim().length > 0;
-            const amountValid = selectedAmount !== null && parseFloat(selectedAmount) > 0;
-            
-            submitButton.disabled = !(fileUploaded && nameProvided && amountValid);
+        const checkFinal = () => {
+            btnSubmit.disabled = !(fileInp.files.length > 0 && payerInp.value.trim().length > 2);
         };
-        
-        // Listener para o input de arquivo
-        if (proofInput) {
-            proofInput.addEventListener('change', () => {
-                if (proofInput.files.length > 0) {
-                    fileNameDisplay.innerText = `Arquivo: ${proofInput.files[0].name}`;
-                } else {
-                    fileNameDisplay.innerText = 'Carregar comprovante de pagamento';
-                }
-                checkSubmissionEligibility();
-            });
-        }
-        
-        // Listener para o nome do pagador
-        payerNameInput.addEventListener('input', () => {
-            // Sincroniza o valor com o campo Django oculto
-            payerNameHidden.value = payerNameInput.value.trim(); 
-            checkSubmissionEligibility();
+
+        fileInp.addEventListener('change', () => {
+            document.getElementById('file-name-display').innerText = fileInp.files[0].name;
+            checkFinal();
         });
 
-
-        // Inicia na Etapa 1
-        updateStepVisibility();
+        payerInp.addEventListener('input', () => {
+            document.getElementById('id_payer_name_hidden').value = payerInp.value;
+            checkFinal();
+        });
     });
 </script>
 {% endblock %}

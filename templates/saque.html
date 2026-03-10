@@ -6,7 +6,9 @@
 {% block content %}
 <div class="page-header-app">
     <div class="header-content">
-        <i class="fas fa-money-check-alt header-icon"></i>
+        <div class="icon-circle">
+            <i class="fas fa-hand-holding-usd header-icon"></i>
+        </div>
         <h1>LEVANTAMENTO</h1> 
     </div>
 </div>
@@ -14,45 +16,49 @@
 <div class="app-container-finance">
     {# Área de Mensagens Django #}
     {% if messages %}
-        <ul class="messages-app-finance">
+        <div class="messages-container">
             {% for message in messages %}
-                <li class="{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}"><i class="fas fa-bell"></i> {{ message }}</li>
+                <div class="message-item {% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">
+                    <i class="fas fa-bell"></i> {{ message }}
+                </div>
             {% endfor %}
-        </ul>
+        </div>
     {% endif %}
 
-    {# NOVO CARD DE SALDO - Fundo Preto, Movido para o Topo #}
+    {# NOVO CARD DE SALDO - Design Moderno #}
     <div class="card-balance-new">
-        <div class="balance-header">
-            <i class="fas fa-wallet card-icon"></i>
-            <p class="balance-label">Seu Saldo Disponível</p>
+        <div class="balance-info">
+            <div class="balance-header">
+                <i class="fas fa-wallet card-icon"></i>
+                <p class="balance-label">Saldo Disponível</p>
+            </div>
+            <p class="balance-amount">{{ user.available_balance|default:"0.00" }} <span class="currency">KZ</span></p>
         </div>
-        <p class="balance-amount">{{ user.available_balance|default:"0.00" }} KZ</p>
         
         {# Alerta de Dados Bancários #}
         <div class="card-details">
             {% if not has_bank_details %}
-                <div class="alert-bank-required">
-                    <i class="fas fa-exclamation-circle"></i>
-                    **Atenção:** Dados bancários pendentes. Atualize no seu <a href="{% url 'perfil' %}" class="link-action-bank">Perfil</a>.
+                <div class="alert-bank-status alert-pending">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Dados pendentes. Atualize no <a href="{% url 'perfil' %}" class="link-action-bank">Perfil</a>.</span>
                 </div>
             {% else %}
-                <div class="alert-bank-ok">
-                    <i class="fas fa-check-circle"></i>
-                    **Dados Bancários:** Configurados.
+                <div class="alert-bank-status alert-success">
+                    <i class="fas fa-check-double"></i>
+                    <span>Dados Bancários configurados.</span>
                 </div>
             {% endif %}
         </div>
     </div>
     
     <div class="main-workspace-new">
-        {# 🧭 Navegação de Abas (Separadores) Horizontal e Simplificada #}
+        {# 🧭 Navegação de Abas #}
         <div class="tabs-navigation-bottom">
             <button class="tab-button-bottom active" onclick="openTab(event, 'realizar-saque')">
-                <i class="fas fa-file-invoice-dollar"></i> Solicitar Levantamento
+                <i class="fas fa-paper-plane"></i> Solicitar
             </button>
             <button class="tab-button-bottom" onclick="openTab(event, 'historico')">
-                <i class="fas fa-list-alt"></i> Histórico de Levantamentos {# Título alterado para ser mais geral #}
+                <i class="fas fa-history"></i> Histórico
             </button>
         </div>
 
@@ -61,99 +67,92 @@
             {# 1º Separador: Formulário de Saque #}
             <div id="realizar-saque" class="tab-pane active">
                 {% if not has_bank_details or already_withdrawn_today or not is_time_allowed %}
-                    {# NOVO BLOQUEIO - Mais Direto e Personalizado #}
                     <div class="card-message-overlay-new">
-                        <i class="fas fa-lock"></i>
-                        <h2>LEVANTAMENTO BLOQUEADO</h2>
-                        <p>Verifique os seguintes requisitos para continuar:</p>
-                        <ul>
-                            {% if not has_bank_details %}<li><i class="fas fa-university"></i> **Dados Bancários:** É obrigatório configurar suas coordenadas bancárias no <a href="{% url 'perfil' %}" class="link-action-bank">Perfil</a>.</li>{% endif %}
-                            {% if already_withdrawn_today %}<li><i class="fas fa-calendar-times"></i> **Limite Diário:** Você já realizou um levantamento hoje. Permissão de um saque por dia.</li>{% endif %}
-                            {% if not is_time_allowed %}<li><i class="fas fa-clock"></i> **Horário:** Saques são processados apenas das 09:00h às 18:00h (GMT+1).</li>{% endif %}
-                            <li><i class="fas fa-search-dollar"></i> **Mínimo por Levantamento:** {{ min_withdrawal_amount|default:"2000.00" }} KZ.</li>
+                        <div class="lock-illustration">
+                            <i class="fas fa-user-lock"></i>
+                        </div>
+                        <h2>Acesso Restrito</h2>
+                        <p>Para sua segurança, verifique os requisitos:</p>
+                        <ul class="restriction-list">
+                            {% if not has_bank_details %}
+                                <li><i class="fas fa-university"></i> Configure o IBAN no seu Perfil.</li>
+                            {% endif %}
+                            {% if already_withdrawn_today %}
+                                <li><i class="fas fa-calendar-times"></i> Limite de 1 saque por dia atingido.</li>
+                            {% endif %}
+                            {% if not is_time_allowed %}
+                                <li><i class="fas fa-clock"></i> Horário: 09:00h às 18:00h (GMT+1).</li>
+                            {% endif %}
+                            <li><i class="fas fa-shield-alt"></i> Saque mínimo: {{ min_withdrawal_amount|default:"2000.00" }} KZ.</li>
                         </ul>
                     </div>
                 {% else %}
                     <form method="post" class="saque-form-app">
                         {% csrf_token %}
-                        
-                        {# Campo de Entrada #}
-                        <div class="form-group-app input-group-personalizado">
-                            <label for="{{ form.amount.id_for_label }}" class="label-personalizado">Valor do Levantamento (KZ)</label>
+                        <div class="form-group-app">
+                            <label class="label-personalizado">Quanto deseja levantar?</label>
                             <div class="input-icon-wrapper-personalizado">
-                                <i class="fas fa-hand-holding-usd icon-input-left"></i>
+                                <span class="input-symbol">KZ</span>
                                 <input type="number" 
-                                        name="{{ form.amount.name }}" 
-                                        id="{{ form.amount.id_for_label }}" 
-                                        placeholder="Mínimo de {{ min_withdrawal_amount|default:'2000' }} KZ" 
-                                        min="{{ min_withdrawal_amount|default:'2000' }}" 
-                                        step="0.01"
-                                        required
-                                        class="input-personalizado">
-                                <span class="currency-tag-personalizado">KZ</span>
+                                       name="{{ form.amount.name }}" 
+                                       id="{{ form.amount.id_for_label }}" 
+                                       placeholder="0,00" 
+                                       min="{{ min_withdrawal_amount|default:'2000' }}" 
+                                       step="0.01"
+                                       required
+                                       class="input-personalizado">
                             </div>
+                            <small class="min-val-hint">Mínimo de {{ min_withdrawal_amount|default:'2000' }} KZ</small>
                         </div>
                         
-                        <button type="submit" class="button-submit-app button-personalizado">
-                            <i class="fas fa-paper-plane"></i> ENVIAR SOLICITAÇÃO DE LEVANTAMENTO
+                        <button type="submit" class="button-personalizado">
+                            <span>CONFIRMAR LEVANTAMENTO</span>
+                            <i class="fas fa-chevron-right"></i>
                         </button>
                         
-                        <p class="note-saque"><i class="fas fa-info-circle"></i> O processamento é realizado em até **24 horas úteis**.</p>
+                        <div class="note-saque">
+                            <i class="fas fa-shield-check"></i> Processamento seguro em até 24h úteis.
+                        </div>
                     </form>
                 {% endif %}
             </div>
 
-            {# 2º Separador: Histórico de Saques - CORRIGIDO PARA MOSTRAR TODOS OS STATUS #}
-            <div id="historico" class="tab-pane">
-                <div class="card-history">
-                    <h2><i class="fas fa-history"></i> Seus Registos de Levantamentos</h2>
+            {# 2º Separador: Histórico de Saques #}
+            <div id="historico" class="tab-pane" style="display:none;">
+                <div class="history-container">
+                    <h2 class="section-title">Atividade Recente</h2>
                     {% if withdrawal_records %}
                         <div class="history-list-app-new">
-                            
                             {% for record in withdrawal_records %}
-                                {# === LÓGICA DE EXIBIÇÃO DO STATUS AQUI === #}
                                 {% with status_normalized=record.status|lower %}
-                                <div class="transaction-item-new status-{{ status_normalized }}">
-                                    <div class="icon-illustration">
-                                        {# Ícone baseado no status #}
+                                <div class="transaction-card status-{{ status_normalized }}">
+                                    <div class="status-icon-box">
                                         {% if status_normalized == 'pending' %}
-                                            <i class="fas fa-clock"></i>
+                                            <i class="fas fa-spinner fa-spin"></i>
                                         {% elif status_normalized == 'aprovado' or status_normalized == 'approved' %}
-                                            <i class="fas fa-check-circle"></i>
+                                            <i class="fas fa-check"></i>
                                         {% elif status_normalized == 'rejeitado' or status_normalized == 'rejected' %}
-                                            <i class="fas fa-times-circle"></i>
+                                            <i class="fas fa-times"></i>
                                         {% else %}
-                                            <i class="fas fa-hand-holding-usd"></i>
+                                            <i class="fas fa-exchange-alt"></i>
                                         {% endif %}
                                     </div>
-                                    <div class="transaction-details-new">
-                                        <span class="transaction-type-new">
-                                            Levantamento: 
-                                            {% if status_normalized == 'pending' %}Pendente{% elif status_normalized == 'aprovado' or status_normalized == 'approved' %}Aprovado{% elif status_normalized == 'rejeitado' or status_normalized == 'rejected' %}Rejeitado{% else %}Em Processo{% endif %}
-                                        </span>
-                                        <span class="transaction-date-new">{{ record.created_at|date:"d/m/Y H:i" }}</span>
+                                    <div class="transaction-info">
+                                        <span class="t-name">Levantamento</span>
+                                        <span class="t-date">{{ record.created_at|date:"d M, Y • H:i" }}</span>
                                     </div>
-                                    <span class="transaction-amount-new amount-{{ status_normalized }}">- {{ record.amount|default:"0.00" }} KZ</span> {# O saque é uma saída, usamos o sinal de menos #}
-                                    <div class="status-tag-new tag-{{ status_normalized }}">
-                                        {# Texto da tag #}
-                                        {% if status_normalized == 'pending' %}
-                                            <i class="fas fa-hourglass-half"></i> Pendente
-                                        {% elif status_normalized == 'aprovado' or status_normalized == 'approved' %}
-                                            <i class="fas fa-check"></i> Aprovado
-                                        {% elif status_normalized == 'rejeitado' or status_normalized == 'rejected' %}
-                                            <i class="fas fa-times"></i> Rejeitado
-                                        {% else %}
-                                            <i class="fas fa-question"></i> APTO PROCESSO
-                                        {% endif %}
+                                    <div class="transaction-values">
+                                        <span class="t-amount">- {{ record.amount|default:"0.00" }} KZ</span>
+                                        <span class="status-label">{{ status_normalized|title }}</span>
                                     </div>
                                 </div>
                                 {% endwith %}
                             {% endfor %}
-
                         </div>
                     {% else %}
-                        <div class="alert-box-finance info-border">
-                            <i class="fas fa-info-circle"></i> Não há registos de saques recentes.
+                        <div class="empty-state">
+                            <i class="fas fa-folder-open"></i>
+                            <p>Nenhum registro encontrado.</p>
                         </div>
                     {% endif %}
                 </div>
@@ -163,476 +162,215 @@
 </div>
 
 <style>
-    /* --- V4.2: Estilos Personalizados e Profissionais (Com lógica de status no CSS) --- */
-    
-    /* Estrutura Base */
+    :root {
+        --primary: #6366f1;
+        --secondary: #4f46e5;
+        --dark: #0f172a;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --bg-gradient: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                       radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                       radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+    }
+
     body {
-        background-color: #f4f6f9; 
-        font-family: 'Open Sans', sans-serif;
-        color: #333;
-    }
-    
-    /* Container Principal da Aplicação */
-    .app-container-finance {
-        max-width: 900px;
-        margin: -40px auto 30px; 
-        background-color: #ffffff;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-        display: flex;
-        flex-direction: column; 
-        overflow: hidden;
+        background-color: #0b0f19;
+        background-image: var(--bg-gradient);
+        background-attachment: fixed;
+        font-family: 'Inter', sans-serif;
+        color: #e2e8f0;
+        margin: 0;
+        padding: 20px;
     }
 
-    /* Cabeçalho da Aplicação (Onde está 'LEVANTAMENTO') */
+    /* Header */
     .page-header-app {
-        padding: 20px 0;
+        padding: 40px 0;
         text-align: center;
-        background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
-        color: #fff;
     }
-    .header-content {
-        display: inline-flex;
-        align-items: center;
-    }
-    .header-icon {
-        font-size: 2rem;
-        margin-right: 15px;
-        color: #fff;
-    }
-    .page-header-app h1 {
-        margin: 0;
-        font-size: 2rem;
-        font-weight: 700;
-        text-transform: uppercase;
-    }
-
-    .main-workspace-new {
+    .icon-circle {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
         display: flex;
-        flex-direction: column;
-        min-height: 400px;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+    .header-icon { font-size: 1.5rem; color: #fff; }
+    .page-header-app h1 { font-size: 1.5rem; letter-spacing: 3px; font-weight: 300; margin: 0; color: #fff; }
+
+    /* Container */
+    .app-container-finance {
+        max-width: 500px;
+        margin: 0 auto;
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(20px);
+        border-radius: 24px;
+        border: 1px solid rgba(255,255,255,0.1);
+        overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
     }
 
-    /* --- CARD DE SALDO (Topo, Fundo Escuro) --- */
+    /* Balanço */
     .card-balance-new {
-        background: #2c3e50; 
-        padding: 25px 30px;
-        color: #fff;
-        text-align: left;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+        padding: 30px;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
     }
-    .balance-header {
+    .balance-label { font-size: 0.85rem; color: #94a3b8; margin: 0; }
+    .balance-amount { font-size: 2.5rem; font-weight: 700; margin: 5px 0; color: #fff; }
+    .currency { font-size: 1rem; color: #6366f1; }
+
+    .alert-bank-status {
         display: flex;
         align-items: center;
-        margin-bottom: 5px;
-        opacity: 0.8;
+        gap: 10px;
+        font-size: 0.8rem;
+        padding: 10px;
+        border-radius: 12px;
+        margin-top: 15px;
     }
-    .card-icon {
-        font-size: 1.5rem;
-        margin-right: 10px;
-    }
-    .balance-label {
-        font-size: 1rem;
-        margin: 0;
-        font-weight: 300;
-    }
-    .balance-amount {
-        font-size: 3rem;
-        font-weight: 800;
-        margin: 0 0 15px;
-        letter-spacing: 1px;
-        text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
-    }
-    .card-details {
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        padding-top: 10px;
-    }
-    /* Estilo para status OK (novo) */
-    .alert-bank-ok {
-        color: #2ecc71; /* Verde */
-        font-size: 0.95rem;
-        font-weight: 600;
-    }
-    .alert-bank-ok i {
-        margin-right: 5px;
-    }
-    .alert-bank-required {
-        color: #f39c12; /* Laranja para pendência */
-        font-size: 0.95rem;
-        font-weight: 600;
-    }
-    .alert-bank-required i {
-        margin-right: 5px;
-    }
-    .link-action-bank {
-        color: #00c6ff; 
-        text-decoration: underline;
-        font-weight: 700;
-    }
+    .alert-pending { background: rgba(245, 158, 11, 0.1); color: #fbbf24; }
+    .alert-success { background: rgba(16, 185, 129, 0.1); color: #34d399; }
+    .link-action-bank { color: #fff; font-weight: 600; text-decoration: underline; }
 
-    /* --- Navegação de Abas Inferiores (Simplificada) --- */
+    /* Abas */
     .tabs-navigation-bottom {
         display: flex;
-        width: 100%;
-        background-color: #f4f6f9; 
-        border-bottom: 1px solid #ddd;
+        background: rgba(15, 23, 42, 0.5);
+        padding: 5px;
     }
     .tab-button-bottom {
         flex: 1;
-        background: none;
+        padding: 15px;
         border: none;
-        padding: 18px 10px;
-        font-size: 1rem;
+        background: none;
+        color: #64748b;
         font-weight: 600;
         cursor: pointer;
-        color: #7f8c8d; 
-        border-bottom: 3px solid transparent;
-        transition: all 0.3s;
-        text-transform: uppercase;
-    }
-    .tab-button-bottom:hover {
-        background-color: #eee;
-    }
-    .tab-button-bottom.active {
-        color: #6a11cb; 
-        border-bottom: 3px solid #6a11cb;
-        background-color: #ffffff;
-    }
-    .tab-button-bottom i {
-        margin-right: 8px;
-    }
-
-    /* Área de Conteúdo */
-    .tabs-content-area-finance {
-        flex: 1;
-        padding: 30px;
-        background-color: #ffffff;
-    }
-
-    /* --- ESTILOS PROFISSIONAIS PARA O FORMULÁRIO DE SAQUE/LEVANTAMENTO --- */
-    .saque-form-app {
-        display: flex;
-        flex-direction: column;
-        gap: 25px;
-        max-width: 500px; 
-        margin: 0 auto;
-        padding: 20px;
-        border: 1px solid #ddd;
-        border-radius: 10px;
-    }
-    .label-personalizado {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: 700;
-        color: #34495e; 
-        font-size: 1rem;
-    }
-    .input-icon-wrapper-personalizado {
-        position: relative;
+        border-radius: 15px;
+        transition: 0.3s;
         display: flex;
         align-items: center;
+        justify-content: center;
+        gap: 8px;
     }
-    .icon-input-left {
-        position: absolute;
-        left: 15px;
-        color: #6a11cb; 
-        font-size: 1.2rem;
-        pointer-events: none; 
+    .tab-button-bottom.active {
+        background: #6366f1;
+        color: #fff;
     }
-    .currency-tag-personalizado {
+
+    /* Formulário */
+    .tabs-content-area-finance { padding: 30px; }
+    .label-personalizado { display: block; color: #94a3b8; margin-bottom: 15px; font-size: 0.9rem; }
+    .input-icon-wrapper-personalizado { position: relative; }
+    .input-symbol {
         position: absolute;
-        right: 15px;
-        color: #7f8c8d; 
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6366f1;
         font-weight: 700;
-        font-size: 1rem;
     }
     .input-personalizado {
         width: 100%;
-        padding: 15px 60px 15px 45px; 
-        border: 2px solid #ccc;
-        border-radius: 8px;
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #333;
-        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
-        transition: border-color 0.3s, box-shadow 0.3s;
-    }
-    .input-personalizado:focus {
-        border-color: #6a11cb;
-        box-shadow: 0 0 8px rgba(106, 17, 203, 0.4);
-        outline: none;
-    }
-    .button-personalizado {
-        background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%); 
-        color: white;
-        border: none;
-        padding: 18px 25px;
-        font-size: 1.1rem;
-        font-weight: 700;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: opacity 0.3s, transform 0.2s;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    }
-    .button-personalizado:hover {
-        opacity: 0.9;
-        transform: translateY(-1px);
-    }
-    .button-personalizado i {
-        margin-right: 10px;
-        font-size: 1.2rem;
-    }
-    .note-saque {
-        text-align: center;
-        font-size: 0.9rem;
-        color: #7f8c8d;
-        margin-top: 10px;
-        padding-top: 15px;
-        border-top: 1px dashed #eee;
-    }
-    .note-saque i {
-        color: #3498db;
-        margin-right: 5px;
-    }
-
-    /* Novo Bloqueio de Mensagem */
-    .card-message-overlay-new {
-        text-align: center;
-        padding: 30px 20px;
-        background: linear-gradient(145deg, #fce7e7, #fff0f0);
-        border: 2px solid #e74c3c;
-        border-radius: 12px;
-        box-shadow: 0 4px 10px rgba(231, 76, 60, 0.2);
-    }
-    .card-message-overlay-new i {
-        font-size: 2.5rem;
-        color: #e74c3c;
-        margin-bottom: 15px;
-    }
-    .card-message-overlay-new h2 {
-        color: #e74c3c;
-        font-size: 1.4rem;
-        margin-top: 0;
-    }
-    .card-message-overlay-new p {
-        font-size: 1rem;
-        color: #c0392b;
-        margin-bottom: 20px;
-    }
-    .card-message-overlay-new ul {
-        list-style: none;
-        padding: 0;
-        text-align: left;
-        display: inline-block;
-        max-width: 450px;
-    }
-    .card-message-overlay-new li {
-        margin-top: 10px;
-        color: #a94442;
-        font-size: 0.95rem;
-        display: flex;
-        align-items: flex-start;
-    }
-    .card-message-overlay-new li i {
-        font-size: 1rem;
-        margin-right: 10px;
-        margin-top: 4px;
-        color: #e74c3c;
-    }
-
-
-    /* --- Histórico Personalizado (Lógica de Status CSS) --- */
-    .history-list-app-new {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-    .transaction-item-new {
-        display: flex;
-        align-items: center;
-        padding: 15px 20px;
-        background-color: #fff;
-        border-radius: 10px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        transition: transform 0.2s;
-        border-left: 5px solid #bdc3c7; /* Cinza Padrão */
-    }
-    .transaction-item-new:hover {
-        transform: translateY(-2px);
-    }
-    .icon-illustration {
-        font-size: 2rem;
-        margin-right: 20px;
-        color: #6a11cb; 
-    }
-    .transaction-details-new {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-    }
-    .transaction-type-new {
-        font-weight: 700;
-        color: #34495e; 
-        font-size: 1.1rem;
-    }
-    .transaction-date-new {
-        font-size: 0.9rem;
-        color: #7f8c8d;
-    }
-    .transaction-amount-new {
-        font-weight: 800;
-        color: #333; 
-        font-size: 1.2rem;
-        margin-right: 15px;
-    }
-    .status-tag-new {
-        padding: 5px 10px;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: bold;
-        text-transform: uppercase;
-        background-color: #bdc3c7; /* Cinza Padrão */
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255,255,255,0.1);
+        padding: 20px 20px 20px 55px;
+        border-radius: 16px;
         color: #fff;
+        font-size: 1.5rem;
+        font-weight: 600;
+        box-sizing: border-box;
+    }
+    .input-personalizado:focus { border-color: #6366f1; outline: none; background: rgba(15, 23, 42, 0.8); }
+    .min-val-hint { display: block; margin-top: 10px; color: #475569; font-size: 0.75rem; }
+
+    .button-personalizado {
+        width: 100%;
+        background: #6366f1;
+        color: #fff;
+        border: none;
+        padding: 20px;
+        border-radius: 16px;
+        font-weight: 700;
+        margin-top: 25px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: 0.3s;
+    }
+    .button-personalizado:hover { background: #4f46e5; transform: translateY(-2px); }
+
+    /* Histórico */
+    .transaction-card {
+        background: rgba(15, 23, 42, 0.4);
+        padding: 15px;
+        border-radius: 16px;
         display: flex;
         align-items: center;
-        min-width: 100px; /* Ajuda a manter o layout */
+        gap: 15px;
+        margin-bottom: 12px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+    .status-icon-box {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
         justify-content: center;
+        background: rgba(255,255,255,0.05);
     }
-    .status-tag-new i {
-        margin-right: 5px;
-    }
-    
-    /* === ESTILOS POR STATUS === */
-    /* Aprovado */
-    .transaction-item-new.status-aprovado,
-    .transaction-item-new.status-approved {
-        border-left-color: #2ecc71; /* Verde */
-    }
-    .transaction-item-new.status-aprovado .icon-illustration,
-    .transaction-item-new.status-approved .icon-illustration {
-        color: #2ecc71;
-    }
-    .transaction-item-new.status-aprovado .transaction-type-new,
-    .transaction-item-new.status-approved .transaction-type-new {
-        color: #2ecc71;
-    }
-    .transaction-amount-new.amount-aprovado,
-    .transaction-amount-new.amount-approved {
-        color: #2ecc71;
-    }
-    .status-tag-new.tag-aprovado,
-    .status-tag-new.tag-approved {
-        background-color: #2ecc71;
-    }
-    
-    /* Pendente */
-    .transaction-item-new.status-pending {
-        border-left-color: #f39c12; /* Amarelo/Laranja */
-    }
-    .transaction-item-new.status-pending .icon-illustration {
-        color: #f39c12;
-    }
-    .transaction-item-new.status-pending .transaction-type-new {
-        color: #f39c12;
-    }
-    .transaction-amount-new.amount-pending {
-        color: #f39c12;
-    }
-    .status-tag-new.tag-pending {
-        background-color: #f39c12;
-    }
-    
-    /* Rejeitado */
-    .transaction-item-new.status-rejeitado,
-    .transaction-item-new.status-rejected {
-        border-left-color: #e74c3c; /* Vermelho */
-    }
-    .transaction-item-new.status-rejeitado .icon-illustration,
-    .transaction-item-new.status-rejected .icon-illustration {
-        color: #e74c3c;
-    }
-    .transaction-item-new.status-rejeitado .transaction-type-new,
-    .transaction-item-new.status-rejected .transaction-type-new {
-        color: #e74c3c;
-    }
-    .transaction-amount-new.amount-rejeitado,
-    .transaction-amount-new.amount-rejected {
-        color: #e74c3c;
-    }
-    .status-tag-new.tag-rejeitado,
-    .status-tag-new.tag-rejected {
-        background-color: #e74c3c;
-    }
+    .transaction-info { flex: 1; display: flex; flex-direction: column; }
+    .t-name { font-weight: 600; font-size: 0.9rem; }
+    .t-date { font-size: 0.7rem; color: #64748b; }
+    .transaction-values { text-align: right; }
+    .t-amount { display: block; font-weight: 700; font-size: 0.9rem; }
+    .status-label { font-size: 0.65rem; text-transform: uppercase; font-weight: 800; }
 
-    /* Media Queries */
-    @media (max-width: 768px) {
-        .card-balance-new {
-            border-radius: 0;
-            padding: 20px 15px;
-        }
-        .balance-amount {
-            font-size: 2.5rem;
-        }
-        .transaction-item-new {
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .transaction-amount-new {
-            order: 3; 
-            width: 100%;
-            text-align: right;
-            margin-right: 0;
-        }
-        .status-tag-new {
-            order: 4; 
-        }
-        .icon-illustration {
-            font-size: 1.5rem;
-        }
-        .input-personalizado {
-            font-size: 1.1rem;
-            padding: 12px 60px 12px 45px;
-        }
-        .button-personalizado {
-            font-size: 1rem;
-            padding: 15px 20px;
-        }
+    /* Cores de Status */
+    .status-aprovado .status-icon-box, .status-approved .status-icon-box { color: #10b981; }
+    .status-aprovado .status-label, .status-approved .status-label { color: #10b981; }
+    .status-pending .status-icon-box { color: #f59e0b; }
+    .status-pending .status-label { color: #f59e0b; }
+    .status-rejeitado .status-icon-box, .status-rejected .status-icon-box { color: #ef4444; }
+    .status-rejeitado .status-label, .status-rejected .status-label { color: #ef4444; }
+
+    /* Bloqueio */
+    .card-message-overlay-new { text-align: center; padding: 20px 0; }
+    .lock-illustration { font-size: 3rem; color: #6366f1; margin-bottom: 20px; opacity: 0.5; }
+    .restriction-list { list-style: none; padding: 0; text-align: left; margin-top: 20px; }
+    .restriction-list li { padding: 12px; background: rgba(255,255,255,0.03); border-radius: 12px; margin-bottom: 8px; font-size: 0.85rem; display: flex; align-items: center; gap: 10px; color: #94a3b8; }
+    .restriction-list li i { color: #6366f1; }
+
+    .note-saque { text-align: center; font-size: 0.75rem; color: #475569; margin-top: 20px; }
+
+    @media (max-width: 480px) {
+        body { padding: 10px; }
+        .app-container-finance { border-radius: 0; margin: 0; width: 100%; }
     }
 </style>
 
 <script>
-    // Função JavaScript para controlar a troca de abas (Lógica original mantida)
     function openTab(evt, tabName) {
         var i, tabcontent, tablinks;
-
-        // 1. Esconde todos os conteúdos das abas
         tabcontent = document.getElementsByClassName("tab-pane");
         for (i = 0; i < tabcontent.length; i++) {
             tabcontent[i].style.display = "none";
         }
-
-        // 2. Remove a classe 'active' de todos os botões de aba
         tablinks = document.getElementsByClassName("tab-button-bottom");
         for (i = 0; i < tablinks.length; i++) {
-            tablinks[i].className = tablinks[i].className.replace(" active", "");
+            tablinks[i].classList.remove("active");
         }
-
-        // 3. Mostra a aba atual e adiciona a classe 'active' ao botão clicado
         document.getElementById(tabName).style.display = "block";
-        evt.currentTarget.className += " active";
+        evt.currentTarget.classList.add("active");
     }
-
-    // Inicializa a página abrindo a primeira aba ('realizar-saque')
-    document.addEventListener("DOMContentLoaded", function() {
-        const firstTabContent = document.getElementById("realizar-saque");
-        const firstTabButton = document.querySelector(".tab-button-bottom:first-child");
-        
-        if (firstTabContent && firstTabButton) {
-            firstTabContent.style.display = "block";
-            firstTabButton.classList.add("active");
-        }
-    });
 </script>
 {% endblock %}

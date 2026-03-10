@@ -1,1 +1,1 @@
-web: gunicorn neoenergia.wsgi
+web: gunicorn goldenergy.wsgi

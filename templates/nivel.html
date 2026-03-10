@@ -1,291 +1,215 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Níveis de Investimento - Plataforma{% endblock %}
+{% block title %}Níveis de Investimento{% endblock %}
 
 {% block content %}
-<div class="container my-5 custom-container">
-    <div class="page-header-custom">
-        <h1>📈 NÍVEIS DE INVESTIMENTO</h1>
-    </div>
-    
-    <div class="level-list row justify-content-center">
-        {% for level in levels %}
-        <div class="col-sm-6 col-lg-4 mb-4 level-card-col">
-            <div class="level-item {% if level.id in user_levels %}active-border{% endif %}">
-                
-                {# 1. ÍCONE E TÍTULO MODERNOS (Organização compacta) #}
-                <div class="level-header">
-                    <div class="level-icon-wrapper">
-                        {# Ícones e cores inspirados no material design, baseados no ID #}
-                        {% if level.id == 1 %}
-                            <i class="fas fa-bolt" style="color: #ffffff; background-color: #5d5dff;"></i> {# Raio Azul #}
-                        {% elif level.id == 2 %}
-                            <i class="fas fa-hand-holding-box" style="color: #ffffff; background-color: #00b894;"></i> {# Caixa Verde #}
-                        {% elif level.id == 3 %}
-                            <i class="fas fa-fire-alt" style="color: #ffffff; background-color: #ff7675;"></i> {# Fogo Vermelho #}
-                        {% elif level.id == 4 %}
-                            <i class="fas fa-shield-alt" style="color: #ffffff; background-color: #fdcb6e;"></i> {# Escudo Amarelo #}
-                        {% elif level.id == 5 %}
-                            <i class="fas fa-rocket" style="color: #ffffff; background-color: #a29bfe;"></i> {# Foguete Roxo #}
+<div class="vip-container">
+    <div class="container py-4">
+        
+        <div class="header-minimal">
+            <h1>VIPS DISPONÍVEIS</h1>
+            <div class="header-line"></div>
+        </div>
+        
+        <div class="row g-3 justify-content-center">
+            {% for level in levels %}
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="compact-card {% if level.id in user_levels %}active-status{% endif %}">
+                    
+                    {# CABEÇALHO COMPACTO #}
+                    <div class="card-top">
+                        <div class="mini-icon id-{{ level.id }}">
+                            {% if level.id == 1 %}<i class="fas fa-bolt"></i>
+                            {% elif level.id == 2 %}<i class="fas fa-medal"></i>
+                            {% elif level.id == 3 %}<i class="fas fa-fire"></i>
+                            {% elif level.id == 4 %}<i class="fas fa-crown"></i>
+                            {% elif level.id == 5 %}<i class="fas fa-rocket"></i>
+                            {% else %}<i class="fas fa-star"></i>{% endif %}
+                        </div>
+                        <div class="top-info">
+                            <span class="level-tag">NÍVEL {{ level.id }}</span>
+                            <h3 class="plan-name">{{ level.name }}</h3>
+                        </div>
+                    </div>
+
+                    {# DADOS FINANCEIROS EM LISTA SLIM #}
+                    <div class="data-list">
+                        <div class="data-row">
+                            <span class="label">Diário</span>
+                            <span class="val text-highlight">KZ {{ level.daily_gain }}</span>
+                        </div>
+                        <div class="data-row main-row">
+                            <span class="label">Mensal</span>
+                            <span class="val">KZ {{ level.monthly_gain }}</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="label">Custo</span>
+                            <span class="val">KZ {{ level.deposit_value }}</span>
+                        </div>
+                    </div>
+
+                    {# RODAPÉ E BOTÃO #}
+                    <div class="card-action">
+                        {% if level.id in user_levels %}
+                            <div class="badge-active">ATIVO</div>
                         {% else %}
-                            <i class="fas fa-layer-group" style="color: #ffffff; background-color: #dfe6e9;"></i>
+                            <form method="post" action="{% url 'nivel' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="level_id" value="{{ level.id }}">
+                                <button type="submit" class="btn-slim">INVESTIR</button>
+                            </form>
                         {% endif %}
                     </div>
-                    <div class="title-details">
-                        <h3 class="level-title">NÍVEL {{ level.id }}</h3>
-                        <p class="level-plan-days">
-                            <span class="plan-name">{{ level.name }}</span> • {{ level.cycle_days }} dias
-                        </p>
-                    </div>
                 </div>
-                
-                {# 2. GRADE DE INDICADORES COMPACTA #}
-                <div class="level-indicators-grid">
-                    
-                    {# 2.1. INDICADOR DIÁRIO #}
-                    <div class="indicator-box daily-box">
-                        <span class="indicator-label">Diário</span>
-                        <strong class="indicator-value">KZ {{ level.daily_gain }}</strong>
-                    </div>
-
-                    {# 2.2. INDICADOR MENSAL (Total) - Destaque #}
-                    <div class="indicator-box monthly-box">
-                        <span class="indicator-label">Mensal</span>
-                        <strong class="indicator-value total-value">KZ {{ level.monthly_gain }}</strong> 
-                    </div>
-
-                    {# 2.3. INDICADOR DE INVESTIMENTO (Depósito) #}
-                    <div class="indicator-box invest-box">
-                        <span class="indicator-label">Investir</span>
-                        <strong class="indicator-value">KZ {{ level.deposit_value }}</strong>
-                    </div>
-
-                </div>
-                
-                {# 3. LÓGICA DE INTERAÇÃO COM DJANGO MANTIDA #}
-                {% if level.id in user_levels %}
-                    <span class="active-level pulse-effect">Nível Ativo</span>
-                {% else %}
-                    <form method="post" action="{% url 'nivel' %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="level_id" value="{{ level.id }}">
-                        <button type="submit" class="buy-button hover-effect">Investir Agora</button>
-                    </form>
-                {% endif %}
-                
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
     </div>
 </div>
 
 <style>
-    /* 🎨 Cores e Estilos Globais */
     :root {
-        --primary-gradient: linear-gradient(45deg, #6c5ce7, #0984e3);
-        --primary-color: #0984e3; /* Azul primário */
-        --success-green: #2ecc71; 
-        --light-gray: #f8f9fa;
-        --card-bg: #ffffff;
-        --dark-text: #34495e;
-        --monthly-highlight: #28a745; /* Cor verde para destacar o Mensal */
+        --bg-dark: #0b0f1a;
+        --card-dark: #161c2d;
+        --accent-blue: #38bdf8;
+        --accent-green: #22c55e;
+        --border-color: rgba(255, 255, 255, 0.08);
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
     }
 
-    body {
-        background-color: var(--light-gray); 
+    .vip-container {
+        background-color: var(--bg-dark);
+        min-height: 100vh;
+        color: var(--text-main);
         font-family: 'Inter', sans-serif;
     }
 
-    /* 📌 Cabeçalho */
-    .page-header-custom {
+    .header-minimal {
         text-align: center;
-        padding: 20px 15px;
-        background-color: var(--card-bg);
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         margin-bottom: 30px;
-        border-left: 5px solid var(--primary-color);
     }
-    .page-header-custom h1 {
-        color: var(--dark-text);
+    .header-minimal h1 {
+        font-size: 1.2rem;
         font-weight: 800;
-        font-size: 1.8rem;
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+    }
+    .header-line {
+        width: 40px;
+        height: 3px;
+        background: var(--accent-blue);
+        margin: 0 auto;
+        border-radius: 2px;
     }
 
-    /* 🧱 Cards de Nível */
-    .custom-container {
-        max-width: 1200px; 
-        padding: 0 15px;
-    }
-    
-    /* Configuração de Colunas (padrão Bootstrap 4/5) */
-    @media (min-width: 768px) { .col-sm-6 { flex: 0 0 50%; max-width: 50%; } }
-    @media (min-width: 992px) { .col-lg-4 { flex: 0 0 33.333333%; max-width: 33.333333%; } }
-    @media (min-width: 1200px) { .col-lg-4 { /* Em ecrãs super grandes, ainda 3 por linha */ } }
-
-
-    .level-item {
-        background: var(--card-bg);
-        padding: 20px;
-        border-radius: 15px; 
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-        transition: transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease;
+    .compact-card {
+        background: var(--card-dark);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 12px;
         height: 100%;
         display: flex;
         flex-direction: column;
-        border: 1px solid #e0e0e0;
+        transition: 0.2s;
+    }
+    .compact-card:hover {
+        border-color: var(--accent-blue);
+        transform: translateY(-3px);
     }
 
-    .level-item:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+    .active-status {
+        border: 1.5px solid var(--accent-green);
+        background: rgba(34, 197, 94, 0.03);
     }
 
-    .active-border {
-        border: 3px solid var(--success-green) !important;
-        box-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
-    }
-    
-    /* 1. CABEÇALHO DO NÍVEL (Ícone e Título) */
-    .level-header {
+    .card-top {
         display: flex;
         align-items: center;
-        margin-bottom: 15px; /* Mais compacto */
-        padding-bottom: 10px;
-        border-bottom: 1px solid #f0f0f0;
+        gap: 10px;
+        margin-bottom: 12px;
     }
-
-    .level-icon-wrapper {
-        width: 45px; /* Menor */
-        height: 45px; /* Menor */
-        border-radius: 10px; /* Mais quadrado */
+    .mini-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-right: 15px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        font-size: 0.9rem;
+        color: white;
     }
-    .level-icon-wrapper i {
-        font-size: 1.3rem;
-    }
+    .id-1 { background: #3b82f6; }
+    .id-2 { background: #10b981; }
+    .id-3 { background: #f59e0b; }
+    .id-4 { background: #ef4444; }
+    .id-5 { background: #8b5cf6; }
 
-    .title-details {
-        text-align: left;
-    }
-
-    .level-title {
-        color: var(--dark-text);
-        font-weight: 800;
-        margin: 0;
-        font-size: 1.2rem;
-    }
-
-    .level-plan-days {
-        font-size: 0.8rem; /* Menor */
-        color: #7f8c8d;
-        margin: 0;
-        line-height: 1.2;
+    .level-tag {
+        display: block;
+        font-size: 9px;
+        font-weight: 700;
+        color: var(--text-muted);
     }
     .plan-name {
-        font-weight: 600;
-        color: var(--dark-text);
+        font-size: 0.85rem;
+        font-weight: 700;
+        margin: 0;
+        color: white;
     }
 
-    /* 2. GRADE DE INDICADORES (Ajustada para ser Compacta) */
-    .level-indicators-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr); 
-        gap: 8px; /* Espaço reduzido */
-        margin-bottom: 25px;
+    .data-list {
+        background: rgba(0,0,0,0.2);
+        border-radius: 10px;
+        padding: 8px;
+        margin-bottom: 12px;
     }
-
-    .indicator-box {
-        background-color: var(--light-gray);
-        border: 1px solid #dcdcdc;
-        border-radius: 8px; /* Mais arredondado */
-        padding: 8px 5px; /* Padding reduzido para compactar */
-        text-align: center;
+    .data-row {
         display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        min-height: 70px; /* Altura mínima reduzida */
+        justify-content: space-between;
+        padding: 4px 0;
+        font-size: 11px;
     }
-
-    .indicator-label {
-        font-size: 0.75rem; /* Menor */
-        font-weight: 600;
-        color: #7f8c8d;
-        margin-bottom: 2px;
-        text-transform: uppercase;
-    }
-    .indicator-value {
-        font-size: 0.95rem; /* Menor */
-        font-weight: 800;
-        color: var(--dark-text);
-        line-height: 1.1;
-    }
-
-    /* Destaque para o campo MENSAL */
-    .monthly-box {
-        background-color: rgba(40, 167, 69, 0.1); /* Fundo verde claro */
-        border-color: var(--monthly-highlight);
-    }
-    .monthly-box .indicator-value {
-        color: var(--monthly-highlight);
-        font-size: 1.05rem; /* Um pouco maior que os outros */
-    }
+    .data-row .label { color: var(--text-muted); }
+    .data-row .val { font-weight: 700; }
     
-    /* Estilo do Botão Investir Agora */
-    .buy-button {
-        background: var(--primary-gradient);
-        color: white;
-        padding: 12px;
-        border-radius: 8px;
-        font-size: 1.1rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        border: none;
-        cursor: pointer;
+    .main-row {
+        border-top: 1px solid rgba(255,255,255,0.05);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        margin: 4px 0;
+        padding: 6px 0;
+    }
+    .main-row .val { color: var(--accent-blue); font-size: 12px; }
+    .text-highlight { color: #facc15; }
+
+    .btn-slim {
         width: 100%;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        transition: all 0.2s ease;
-        margin-top: auto;
-    }
-
-    .buy-button.hover-effect:hover {
-        opacity: 0.9;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-    }
-
-    .active-level {
-        background-color: var(--success-green);
-        color: white;
-        padding: 12px;
+        padding: 8px;
         border-radius: 8px;
-        font-size: 1.1rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        text-align: center;
-        margin-top: auto;
-        animation: pulse 1.5s infinite; 
-    }
-    
-    /* Animação */
-    @keyframes pulse {
-        0% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.02); opacity: 0.95; }
-        100% { transform: scale(1); opacity: 1; }
+        border: none;
+        background: var(--accent-blue);
+        color: #000;
+        font-size: 11px;
+        font-weight: 800;
+        transition: 0.2s;
     }
 
-    /* 📱 Responsividade */
+    .badge-active {
+        width: 100%;
+        padding: 8px;
+        border-radius: 8px;
+        background: rgba(34, 197, 94, 0.1);
+        color: var(--accent-green);
+        font-size: 10px;
+        font-weight: 800;
+        text-align: center;
+        border: 1px dashed var(--accent-green);
+    }
+
     @media (max-width: 576px) {
-        .col-sm-6 {
-            flex: 0 0 100%; /* 1 card por linha em mobile */
-            max-width: 100%;
-        }
+        .col-6 { padding: 5px; }
+        .compact-card { padding: 10px; }
     }
 </style>
 {% endblock %}

@@ -262,9 +262,9 @@ def approve_deposit(request, deposit_id):
 @login_required
 def saque(request):
     # NOVOS PARÂMETROS DE SAQUE
-    MIN_WITHDRAWAL_AMOUNT = Decimal('2000') # Usado como Decimal por ser valor monetário
+    MIN_WITHDRAWAL_AMOUNT = Decimal('1500') # Usado como Decimal por ser valor monetário
     START_TIME = time(9, 0, 0) # 09:00:00
-    END_TIME = time(18, 0, 0) # 18:00:00
+    END_TIME = time(17, 0, 0) # 17:00:00
     # FIM DOS NOVOS PARÂMETROS
 
     withdrawal_instruction = PlatformSettings.objects.first().withdrawal_instruction if PlatformSettings.objects.first() else 'Instruções de saque não disponíveis.'
